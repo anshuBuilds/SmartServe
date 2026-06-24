@@ -1,0 +1,9 @@
+package com.smartserve.order.enums;
+
+public enum OrderStatus {
+    PENDING,
+    PREPARING,
+    READY,
+    SERVED,
+    CANCELLED
+}
