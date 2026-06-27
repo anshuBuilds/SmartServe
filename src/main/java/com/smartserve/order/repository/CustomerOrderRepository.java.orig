@@ -1,7 +1,7 @@
 package com.smartserve.order.repository;
 
 import com.smartserve.analytics.dto.OrdersByStatusResponse;
-import com.smartserve.analytics.dto.TablePerformanceRow;
+import com.smartserve.analytics.dto.TablePerformanceResponse;
 import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
