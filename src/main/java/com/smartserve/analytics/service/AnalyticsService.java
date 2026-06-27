@@ -2,6 +2,7 @@ package com.smartserve.analytics.service;
 
 import com.smartserve.analytics.dto.OrdersByStatusResponse;
 import com.smartserve.analytics.dto.SalesSummaryResponse;
+import com.smartserve.analytics.dto.TablePerformanceResponse;
 import com.smartserve.analytics.dto.TopMenuItemResponse;
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.repository.CustomerOrderRepository;
@@ -138,7 +139,27 @@ public class AnalyticsService {
             Instant from,
             Instant to
     ) {
+        validateDateRange(from, to);
 
+        return customerOrderRepository.findTablePerformanceRaw(
+                OrderStatus.SERVED,
+                from,
+                to
+        )
+                .stream()
+                .map(row -> {
+                    BigDecimal revenue = normalize(row.revenue());
+
+                    BigDecimal averageOrderValue = calculateAverage(revenue, row.servedOrderCount());
+
+                    return new TablePerformanceResponse(
+                            row.tableNumber(),
+                            row.servedOrderCount(),
+                            revenue,
+                            averageOrderValue
+                    );
+                })
+                .toList();
     }
 
     private void validateDateRange(Instant from, Instant to) {
