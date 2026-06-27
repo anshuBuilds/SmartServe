@@ -134,6 +134,13 @@ public class AnalyticsService {
                 .toList();
     }
 
+    public List<TablePerformanceResponse> getTablePerformance(
+            Instant from,
+            Instant to
+    ) {
+
+    }
+
     private void validateDateRange(Instant from, Instant to) {
         if (from != null && to != null && !from.isBefore(to)) {
             throw new IllegalArgumentException(
