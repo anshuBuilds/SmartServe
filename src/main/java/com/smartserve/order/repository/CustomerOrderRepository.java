@@ -21,8 +21,8 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
             select coalesce(sum(o.totalAmount), 0)
             from CustomerOrder o
             where o.orderStatus = :status
-                and (:from is null or o.createdAt >= :from)
-                and (:to is null or o.createdAt < :to)
+                and o.createdAt >= :from
+                and o.createdAt < :to
 """)
     BigDecimal sumTotalAmountByStatusAndDateRange(
             @Param("status") OrderStatus status,
@@ -34,8 +34,8 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
         select count(o)
         from CustomerOrder o
         where o.orderStatus = :status
-          and (:from is null or o.createdAt >= :from)
-          and (:to is null or o.createdAt < :to)
+          and o.createdAt >= :from
+          and o.createdAt < :to
         """)
     Long countByStatusAndDateRange(
             @Param("status") OrderStatus status,
@@ -46,8 +46,8 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
     @Query("""
         select count(o)
         from CustomerOrder o
-        where (:from is null or o.createdAt >= :from)
-          and (:to is null or o.createdAt < :to)
+        where o.createdAt >= :from
+          and o.createdAt < :to
         """)
     Long countAllByDateRange(
             @Param("from") Instant from,
@@ -61,8 +61,8 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
             sum(o.totalAmount)
         )
         from CustomerOrder o
-        where (:from is null or o.createdAt >= :from)
-          and (:to is null or o.createdAt < :to)
+        where o.createdAt >= :from
+          and o.createdAt < :to
         group by o.orderStatus
         """)
     List<OrdersByStatusResponse> countOrdersGroupedByStatus(
@@ -78,8 +78,8 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
     )
     from CustomerOrder o
     where o.orderStatus = :status
-      and (:from is null or o.createdAt >= :from)
-      and (:to is null or o.createdAt < :to)
+      and o.createdAt >= :from
+      and o.createdAt < :to
     group by o.tableNumber
     order by sum(o.totalAmount) desc, o.tableNumber asc
     """)

@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    show-sql: false
+
+app:
+  jwt:
+    secret: test-only-secret-that-is-long-enough-for-hmac-signing
+    expiration-ms: 3600000
+  bootstrap:
+    admin:
+      username: test-bootstrap-admin
+      password: test-bootstrap-password
+      full-name: Test Bootstrap Admin

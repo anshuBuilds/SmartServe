@@ -20,6 +20,9 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class AnalyticsService {
 
+    private static final Instant EARLIEST_SUPPORTED_DATE = Instant.parse("0001-01-01T00:00:00Z");
+    private static final Instant LATEST_SUPPORTED_DATE = Instant.parse("9999-12-31T23:59:59Z");
+
     private final CustomerOrderRepository customerOrderRepository;
     private final OrderItemRepository orderItemRepository;
 
@@ -34,28 +37,31 @@ public class AnalyticsService {
     ) {
         validateDateRange(from, to);
 
+        Instant queryFrom = queryFrom(from);
+        Instant queryTo = queryTo(to);
+
         BigDecimal totalRevenue =
                 customerOrderRepository.sumTotalAmountByStatusAndDateRange(
                         OrderStatus.SERVED,
-                        from,
-                        to
+                        queryFrom,
+                        queryTo
                 );
 
         long servedOrderCount =
                 customerOrderRepository.countByStatusAndDateRange(
                         OrderStatus.SERVED,
-                        from,
-                        to
+                        queryFrom,
+                        queryTo
                 );
 
         long totalOrderCount =
-                customerOrderRepository.countAllByDateRange(from, to);
+                customerOrderRepository.countAllByDateRange(queryFrom, queryTo);
 
         long cancelledOrderCount =
                 customerOrderRepository.countByStatusAndDateRange(
                         OrderStatus.CANCELLED,
-                        from,
-                        to
+                        queryFrom,
+                        queryTo
                 );
 
         BigDecimal averageOrderValue = calculateAverage(
@@ -85,8 +91,8 @@ public class AnalyticsService {
 
         return orderItemRepository.findTopSellingItems(
                 OrderStatus.SERVED,
-                from,
-                to,
+                queryFrom(from),
+                queryTo(to),
                 PageRequest.of(0, normalizedLimit)
         )
                 .stream()
@@ -107,7 +113,7 @@ public class AnalyticsService {
         validateDateRange(from, to);
 
         List<OrdersByStatusResponse> databaseResults =
-                customerOrderRepository.countOrdersGroupedByStatus(from, to);
+                customerOrderRepository.countOrdersGroupedByStatus(queryFrom(from), queryTo(to));
 
         Map<OrderStatus, OrdersByStatusResponse> resultByStatus =
                 new EnumMap<>(OrderStatus.class);
@@ -143,8 +149,8 @@ public class AnalyticsService {
 
         return customerOrderRepository.findTablePerformanceRaw(
                 OrderStatus.SERVED,
-                from,
-                to
+                queryFrom(from),
+                queryTo(to)
         )
                 .stream()
                 .map(row -> {
@@ -201,6 +207,14 @@ public class AnalyticsService {
         }
 
         return limit;
+    }
+
+    private Instant queryFrom(Instant from) {
+        return from == null ? EARLIEST_SUPPORTED_DATE : from;
+    }
+
+    private Instant queryTo(Instant to) {
+        return to == null ? LATEST_SUPPORTED_DATE : to;
     }
 
 }
