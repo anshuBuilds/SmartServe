@@ -59,7 +59,41 @@ public class SecurityConfig {
                         .authenticated()
                         .requestMatchers("/api/users/**")
                         .hasRole("ADMIN")
-
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/restaurants"
+                        )
+                        .hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/restaurants/*/branches"
+                        )
+                        .hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/restaurants/**"
+                        )
+                        .hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/branches/*"
+                        )
+                        .hasAnyRole("ADMIN", "MANAGER", "WAITER", "KITCHEN")
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/branches/*/tables"
+                        )
+                        .hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/branches/*/tables"
+                        )
+                        .hasAnyRole("ADMIN", "MANAGER", "WAITER", "KITCHEN")
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/branches/*/tables/*/status"
+                        )
+                        .hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
