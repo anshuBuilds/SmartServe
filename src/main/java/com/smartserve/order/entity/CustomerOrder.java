@@ -2,6 +2,7 @@ package com.smartserve.order.entity;
 
 import com.smartserve.common.entity.BaseEntity;
 import com.smartserve.order.enums.OrderStatus;
+import com.smartserve.order.enums.OrderType;
 import com.smartserve.restaurant.entity.Branch;
 import com.smartserve.restaurant.entity.RestaurantTable;
 import jakarta.persistence.*;
@@ -22,6 +23,16 @@ import lombok.Setter;
 public class CustomerOrder extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String customerName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private OrderType orderType = OrderType.DINE_IN;
+
+    @Column(length = 20)
+    private String customerPhone;
+
+    @Column(nullable = false)
+    private Boolean smsConsent = false;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "branch_id", nullable = false)
