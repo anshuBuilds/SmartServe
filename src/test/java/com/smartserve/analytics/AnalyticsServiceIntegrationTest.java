@@ -20,9 +20,18 @@ import com.smartserve.order.entity.OrderItem;
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.repository.CustomerOrderRepository;
 import com.smartserve.order.repository.OrderItemRepository;
+import com.smartserve.restaurant.entity.Branch;
+import com.smartserve.restaurant.entity.Restaurant;
+import com.smartserve.restaurant.entity.RestaurantTable;
+import com.smartserve.restaurant.enums.TableStatus;
+import com.smartserve.restaurant.repository.BranchRepository;
+import com.smartserve.restaurant.repository.RestaurantRepository;
+import com.smartserve.restaurant.repository.RestaurantTableRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,15 +59,44 @@ class AnalyticsServiceIntegrationTest {
     @Autowired
     private MenuCategoryRepository categoryRepository;
 
+    @Autowired
+    private RestaurantRepository restaurantRepository;
+
+    @Autowired
+    private BranchRepository branchRepository;
+
+    @Autowired
+    private RestaurantTableRepository tableRepository;
+
     private MenuItem burger;
     private MenuItem fries;
+    private Branch branch;
+    private final Map<Integer, RestaurantTable> tables = new HashMap<>();
 
     @BeforeEach
     void setUp() {
         orderItemRepository.deleteAll();
         orderRepository.deleteAll();
+        tableRepository.deleteAll();
+        branchRepository.deleteAll();
+        restaurantRepository.deleteAll();
         menuItemRepository.deleteAll();
         categoryRepository.deleteAll();
+        tables.clear();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("Analytics Restaurant");
+        restaurant.setOwnerName("Analytics Owner");
+        restaurant.setActive(true);
+        restaurant = restaurantRepository.save(restaurant);
+
+        branch = new Branch();
+        branch.setRestaurant(restaurant);
+        branch.setName("Analytics Branch");
+        branch.setAddress("Test Address");
+        branch.setPhone("9876543210");
+        branch.setActive(true);
+        branch = branchRepository.save(branch);
 
         MenuCategory category = new MenuCategory();
         category.setName("Analytics Menu");
@@ -121,7 +159,7 @@ class AnalyticsServiceIntegrationTest {
         List<TablePerformanceResponse> result = analyticsService.getTablePerformance(null, null);
 
         assertEquals(2, result.size());
-        assertEquals(5, result.get(0).tableNumber());
+        assertEquals("T5", result.get(0).tableNumber());
         assertEquals(2L, result.get(0).servedOrderCount());
         assertEquals(new BigDecimal("250.00"), result.get(0).revenue());
         assertEquals(new BigDecimal("125.00"), result.get(0).averageOrderValue());
@@ -158,10 +196,22 @@ class AnalyticsServiceIntegrationTest {
         return item;
     }
 
+    private RestaurantTable tableFor(int tableNumber) {
+        return tables.computeIfAbsent(tableNumber, number -> {
+            RestaurantTable table = new RestaurantTable();
+            table.setBranch(branch);
+            table.setTableNumber("T" + number);
+            table.setCapacity(4);
+            table.setStatus(TableStatus.AVAILABLE);
+            return tableRepository.save(table);
+        });
+    }
+
     private void saveOrder(int tableNumber, OrderStatus status, MenuItem menuItem, int quantity) {
         CustomerOrder order = new CustomerOrder();
         order.setCustomerName("Table " + tableNumber);
-        order.setTableNumber(tableNumber);
+        order.setBranch(branch);
+        order.setTable(tableFor(tableNumber));
         order.setOrderStatus(status);
 
         BigDecimal lineTotal = menuItem.getPrice().multiply(BigDecimal.valueOf(quantity));

@@ -1,22 +1,21 @@
-package com.smartserve.order.dto;
+package com.smartserve.kitchen.dto;
 
 import com.smartserve.order.enums.OrderStatus;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-public record OrderResponse(
-        Long id,
+public record KitchenTicketResponse(
+        Long orderId,
         Long branchId,
         String branchName,
         Long tableId,
         String tableNumber,
         String customerName,
-        OrderStatus orderStatus,
-        BigDecimal totalAmount,
+        OrderStatus status,
         String specialInstructions,
-        List<OrderItemResponse> items,
         Instant createdAt,
-        Instant updatedAt
-) {
-}
+        Instant preparationStartedAt,
+        Instant readyAt,
+        Integer estimatedPreparationMinutes,
+        List<KitchenTicketItemResponse> items
+) {}

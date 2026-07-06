@@ -14,6 +14,8 @@ public class UserResponse {
     private String fullName;
     private Role role;
     private Boolean active;
+    private Long branchId;
+    private String branchName;
     private Instant createdAt;
     private Instant updatedAt;
 }

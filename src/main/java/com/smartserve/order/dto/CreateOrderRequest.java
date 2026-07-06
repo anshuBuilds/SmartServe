@@ -13,8 +13,11 @@ import lombok.Setter;
 @Setter
 public class CreateOrderRequest {
 
-    @NotNull(message = "Table number is required")
-    private Integer tableNumber;
+    @NotNull(message = "Branch ID is required")
+    private Long branchId;
+
+    @NotNull(message = "Table ID is required")
+    private Long tableId;
 
     @NotBlank(message = "Customer name is required")
     @Size(max = 100, message = "Customer name must be at most 100 characters")

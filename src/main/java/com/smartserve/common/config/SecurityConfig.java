@@ -21,81 +21,48 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+        return http.csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/swagger-ui.html","/swagger-ui/**", "/v3/api-docs/**","/webjars/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/swagger-ui.html", "/swagger-ui/**",
+                                "/v3/api-docs/**", "/webjars/**").permitAll()
+                        .requestMatchers("/api/kitchen/**").hasAnyRole("ADMIN", "MANAGER", "KITCHEN")
 
                         .requestMatchers(HttpMethod.GET, "/api/menu/**")
                         .hasAnyRole("ADMIN", "MANAGER", "WAITER", "KITCHEN")
-                        .requestMatchers(HttpMethod.POST, "/api/menu/**")
-                        .hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/menu/**")
-                        .hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/menu/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/menu/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/menu/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/menu/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.POST, "/api/orders")
-                        .hasAnyRole("ADMIN", "MANAGER", "WAITER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("ADMIN", "MANAGER", "WAITER")
                         .requestMatchers(HttpMethod.GET, "/api/orders/**")
                         .hasAnyRole("ADMIN", "MANAGER", "WAITER", "KITCHEN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status")
-                        .hasAnyRole("ADMIN", "MANAGER", "WAITER", "KITCHEN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/*/serve")
+                        .hasAnyRole("ADMIN", "MANAGER", "WAITER")
                         .requestMatchers(HttpMethod.PATCH, "/api/orders/*/cancel")
                         .hasAnyRole("ADMIN", "MANAGER", "WAITER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status")
+                        .hasAnyRole("ADMIN", "MANAGER")
 
-                        .requestMatchers("/api/users/me")
-                        .authenticated()
-                        .requestMatchers("/api/users/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/restaurants"
-                        )
-                        .hasRole("ADMIN")
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/restaurants/*/branches"
-                        )
-                        .hasRole("ADMIN")
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/restaurants/**"
-                        )
-                        .hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/branches/*"
-                        )
+                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/restaurants").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/restaurants/*/branches").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/branches/*")
                         .hasAnyRole("ADMIN", "MANAGER", "WAITER", "KITCHEN")
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/branches/*/tables"
-                        )
-                        .hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/branches/*/tables"
-                        )
+                        .requestMatchers(HttpMethod.POST, "/api/branches/*/tables").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/branches/*/tables")
                         .hasAnyRole("ADMIN", "MANAGER", "WAITER", "KITCHEN")
-                        .requestMatchers(
-                                HttpMethod.PATCH,
-                                "/api/branches/*/tables/*/status"
-                        )
+                        .requestMatchers(HttpMethod.PATCH, "/api/branches/*/tables/*/status")
                         .hasAnyRole("ADMIN", "MANAGER")
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

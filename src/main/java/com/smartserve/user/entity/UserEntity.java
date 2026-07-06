@@ -26,4 +26,8 @@ public class UserEntity extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private com.smartserve.restaurant.entity.Branch branch;
 }

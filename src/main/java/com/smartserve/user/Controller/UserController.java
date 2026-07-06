@@ -2,6 +2,7 @@ package com.smartserve.user.Controller;
 
 import com.smartserve.common.response.ApiResponse;
 import com.smartserve.user.dto.CreateUserRequest;
+import com.smartserve.user.dto.UpdateUserBranchRequest;
 import com.smartserve.user.dto.UpdateUserStatusRequest;
 import com.smartserve.user.dto.UserResponse;
 import com.smartserve.user.service.UserService;
@@ -16,29 +17,22 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/users")
 @RequiredArgsConstructor
 public class UserController {
-
     private final UserService userService;
 
     @GetMapping("/me")
     public ApiResponse<UserResponse> getCurrentUser(Authentication authentication) {
-        UserResponse user = userService.getUserByUsername(authentication.getName());
-        return ApiResponse.success(user);
+        return ApiResponse.success(userService.getUserByUsername(authentication.getName()));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(
-            @Valid @RequestBody CreateUserRequest request
-    ) {
-        UserResponse user = userService.createUser(request);
-
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("User created", user));
+                .body(ApiResponse.success("User created", userService.createUser(request)));
     }
 
     @GetMapping("/{userId}")
     public ApiResponse<UserResponse> getUser(@PathVariable Long userId) {
-        UserResponse user = userService.getUser(userId);
-        return ApiResponse.success(user);
+        return ApiResponse.success(userService.getUser(userId));
     }
 
     @PatchMapping("/{userId}/status")
@@ -47,12 +41,15 @@ public class UserController {
             @Valid @RequestBody UpdateUserStatusRequest request,
             Authentication authentication
     ) {
-        UserResponse user = userService.updateUserStatus(
-                userId,
-                request,
-                authentication.getName()
-        );
+        return ApiResponse.success("User status updated",
+                userService.updateUserStatus(userId, request, authentication.getName()));
+    }
 
-        return ApiResponse.success("User status updated", user);
+    @PatchMapping("/{userId}/branch")
+    public ApiResponse<UserResponse> updateUserBranch(
+            @PathVariable Long userId,
+            @RequestBody UpdateUserBranchRequest request
+    ) {
+        return ApiResponse.success("User branch updated", userService.updateUserBranch(userId, request));
     }
 }

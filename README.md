@@ -60,3 +60,19 @@ Run:
 - `.env.example` is committed and contains only placeholder values.
 - Build output, logs, and IDE files are ignored.
 - Keep the repository private until production secrets, deployment settings, and documentation are fully reviewed.
+## Kitchen Workflow
+
+Kitchen users are assigned to one branch by an administrator. The backend reloads that assignment for every request instead of trusting a client-provided branch.
+
+```text
+PENDING -> PREPARING -> READY -> SERVED
+```
+
+- Poll `GET /api/kitchen/tickets` every five seconds.
+- Start work with `PATCH /api/kitchen/tickets/{orderId}/start`.
+- Mark food ready with `PATCH /api/kitchen/tickets/{orderId}/ready`.
+- Serve a ready order with `PATCH /api/orders/{orderId}/serve`.
+- Managers and administrators pass `branchId` when using kitchen endpoints.
+- Query history through `GET /api/kitchen/tickets/history` using optional `from`, `to`, `status`, `page`, and `size` parameters.
+
+`BUSINESS_TIME_ZONE` controls kitchen-history day boundaries and defaults to `Asia/Kolkata`.

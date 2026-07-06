@@ -46,6 +46,8 @@ public class AuthController {
                 user.getFullName(),
                 user.getRole(),
                 user.getActive(),
+                user.getBranch() == null ? null : user.getBranch().getId(),
+                user.getBranch() == null ? null : user.getBranch().getName(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

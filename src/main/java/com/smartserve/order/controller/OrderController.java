@@ -11,38 +11,26 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
 public class OrderController {
-
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
-            @Valid @RequestBody CreateOrderRequest request
-    ) {
-        OrderResponse order = orderService.createOrder(request);
+    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Order created", order));
+                .body(ApiResponse.success("Order created", orderService.createOrder(request)));
     }
 
     @GetMapping
     public ApiResponse<List<OrderResponse>> getOrders(
-            @RequestParam(required = false) Integer tableNumber,
-            @RequestParam(required = false) OrderStatus status
-    ) {
-        List<OrderResponse> orders = resolveOrders(tableNumber, status);
-        return ApiResponse.success(orders);
+            @RequestParam(required = false) Long branchId,
+            @RequestParam(required = false) Long tableId,
+            @RequestParam(required = false) OrderStatus status) {
+        return ApiResponse.success(resolveOrders(branchId, tableId, status));
     }
 
     @GetMapping("/{orderId}")
@@ -52,32 +40,26 @@ public class OrderController {
 
     @PatchMapping("/{orderId}/status")
     public ApiResponse<OrderResponse> updateOrderStatus(
-            @PathVariable Long orderId,
-            @Valid @RequestBody UpdateOrderStatusRequest request
-    ) {
-        OrderResponse order = orderService.updateOrderStatus(orderId, request);
-        return ApiResponse.success("Order status updated", order);
+            @PathVariable Long orderId, @Valid @RequestBody UpdateOrderStatusRequest request) {
+        return ApiResponse.success("Order status updated", orderService.updateOrderStatus(orderId, request));
     }
 
     @PatchMapping("/{orderId}/cancel")
     public ApiResponse<OrderResponse> cancelOrder(@PathVariable Long orderId) {
-        OrderResponse order = orderService.cancelOrder(orderId);
-        return ApiResponse.success("Order cancelled", order);
+        return ApiResponse.success("Order cancelled", orderService.cancelOrder(orderId));
     }
 
-    private List<OrderResponse> resolveOrders(Integer tableNumber, OrderStatus status) {
-        if (tableNumber != null && status != null) {
-            return orderService.getOrdersByTableNumberAndStatus(tableNumber, status);
-        }
+    @PatchMapping("/{orderId}/serve")
+    public ApiResponse<OrderResponse> serveOrder(@PathVariable Long orderId) {
+        return ApiResponse.success("Order served", orderService.serveOrder(orderId));
+    }
 
-        if (tableNumber != null) {
-            return orderService.getOrdersByTableNumber(tableNumber);
-        }
-
-        if (status != null) {
-            return orderService.getOrdersByStatus(status);
-        }
-
+    private List<OrderResponse> resolveOrders(Long branchId, Long tableId, OrderStatus status) {
+        if (tableId != null && status != null) return orderService.getOrdersByTableIdAndStatus(tableId, status);
+        if (tableId != null) return orderService.getOrdersByTableId(tableId);
+        if (branchId != null && status != null) return orderService.getOrdersByBranchIdAndStatus(branchId, status);
+        if (branchId != null) return orderService.getOrdersByBranchId(branchId);
+        if (status != null) return orderService.getOrdersByStatus(status);
         return orderService.getAllOrders();
     }
 }

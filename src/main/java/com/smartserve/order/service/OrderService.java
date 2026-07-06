@@ -13,6 +13,11 @@ import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.entity.OrderItem;
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.repository.CustomerOrderRepository;
+import com.smartserve.restaurant.entity.Branch;
+import com.smartserve.restaurant.entity.RestaurantTable;
+import com.smartserve.restaurant.enums.TableStatus;
+import com.smartserve.restaurant.repository.BranchRepository;
+import com.smartserve.restaurant.repository.RestaurantTableRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +31,29 @@ public class OrderService {
 
     private final MenuItemRepository menuItemRepository;
     private final CustomerOrderRepository customerOrderRepo;
+    private final BranchRepository branchRepository;
+    private final RestaurantTableRepository tableRepository;
+    private final OrderWorkflowService workflowService;
 
     public OrderResponse createOrder(CreateOrderRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new BadRequestException("Order must contain at least one item");
         }
 
+        Branch branch = branchRepository.findById(request.getBranchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
+
+        RestaurantTable table = tableRepository
+                .findForUpdateByIdAndBranchId(request.getTableId(), request.getBranchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found in this branch"));
+
+        if (table.getStatus() != TableStatus.AVAILABLE) {
+            throw new BadRequestException("Table is not available");
+        }
+
         CustomerOrder order = new CustomerOrder();
-        order.setTableNumber(request.getTableNumber());
+        order.setBranch(branch);
+        order.setTable(table);
         order.setCustomerName(request.getCustomerName().trim());
         order.setSpecialInstructions(request.getSpecialInstructions());
         order.setOrderStatus(OrderStatus.PENDING);
@@ -64,6 +84,7 @@ public class OrderService {
         }
 
         order.setTotalAmount(totalAmount);
+        table.setStatus(TableStatus.OCCUPIED);
 
         CustomerOrder savedOrder = customerOrderRepo.save(order);
         return toOrderResponse(savedOrder);
@@ -84,15 +105,29 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> getOrdersByTableNumber(Integer tableNumber) {
-        return customerOrderRepo.findByTableNumber(tableNumber).stream()
+    public List<OrderResponse> getOrdersByTableId(Long tableId) {
+        return customerOrderRepo.findByTableId(tableId).stream()
                 .map(this::toOrderResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> getOrdersByTableNumberAndStatus(Integer tableNumber, OrderStatus status) {
-        return customerOrderRepo.findByTableNumberAndOrderStatus(tableNumber, status).stream()
+    public List<OrderResponse> getOrdersByTableIdAndStatus(Long tableId, OrderStatus status) {
+        return customerOrderRepo.findByTableIdAndOrderStatus(tableId, status).stream()
+                .map(this::toOrderResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getOrdersByBranchId(Long branchId) {
+        return customerOrderRepo.findByBranchId(branchId).stream()
+                .map(this::toOrderResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getOrdersByBranchIdAndStatus(Long branchId, OrderStatus status) {
+        return customerOrderRepo.findByBranchIdAndOrderStatus(branchId, status).stream()
                 .map(this::toOrderResponse)
                 .toList();
     }
@@ -103,22 +138,11 @@ public class OrderService {
     }
 
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
-        CustomerOrder order = findOrder(orderId);
-        OrderStatus newStatus = request.getOrderStatus();
-
-        validateStatusTransition(order.getOrderStatus(), newStatus);
-
-        order.setOrderStatus(newStatus);
-        return toOrderResponse(order);
+        return toOrderResponse(workflowService.transitionAsManager(orderId, request.getOrderStatus()));
     }
 
     public OrderResponse cancelOrder(Long orderId) {
-        CustomerOrder order = findOrder(orderId);
-
-        validateStatusTransition(order.getOrderStatus(), OrderStatus.CANCELLED);
-
-        order.setOrderStatus(OrderStatus.CANCELLED);
-        return toOrderResponse(order);
+        return toOrderResponse(workflowService.cancel(orderId));
     }
 
     private CustomerOrder findOrder(Long orderId) {
@@ -126,21 +150,8 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
     }
 
-    private void validateStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
-        boolean validTransition = switch (currentStatus) {
-            case PENDING -> newStatus == OrderStatus.PREPARING
-                    || newStatus == OrderStatus.CANCELLED;
-            case PREPARING -> newStatus == OrderStatus.READY
-                    || newStatus == OrderStatus.CANCELLED;
-            case READY -> newStatus == OrderStatus.SERVED;
-            case SERVED, CANCELLED -> false;
-        };
-
-        if (!validTransition) {
-            throw new BadRequestException(
-                    "Cannot change order status from " + currentStatus + " to " + newStatus
-            );
-        }
+    public OrderResponse serveOrder(Long orderId) {
+        return toOrderResponse(workflowService.markServed(orderId));
     }
 
     private OrderResponse toOrderResponse(CustomerOrder order) {
@@ -150,7 +161,10 @@ public class OrderService {
 
         return new OrderResponse(
                 order.getId(),
-                order.getTableNumber(),
+                order.getBranch().getId(),
+                order.getBranch().getName(),
+                order.getTable().getId(),
+                order.getTable().getTableNumber(),
                 order.getCustomerName(),
                 order.getOrderStatus(),
                 order.getTotalAmount(),

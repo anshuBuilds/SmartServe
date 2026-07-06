@@ -3,7 +3,7 @@ package com.smartserve.analytics.dto;
 import java.math.BigDecimal;
 
 public record TablePerformanceRow(
-        Integer tableNumber,
+        String tableNumber,
         Long servedOrderCount,
         BigDecimal revenue
 ) {
