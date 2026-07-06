@@ -17,6 +17,7 @@ import com.smartserve.order.dto.OrderResponse;
 import com.smartserve.order.dto.UpdateOrderStatusRequest;
 import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.enums.OrderStatus;
+import com.smartserve.order.enums.OrderType;
 import com.smartserve.order.repository.CustomerOrderRepository;
 import com.smartserve.order.service.OrderService;
 import com.smartserve.order.service.OrderWorkflowService;
@@ -196,6 +197,8 @@ class OrderServiceTest {
         request.setBranchId(1L);
         request.setTableId(4L);
         request.setCustomerName("  Table Guest  ");
+        request.setOrderType(OrderType.DINE_IN);
+        request.setSmsConsent(false);
         request.setSpecialInstructions("No onions");
         request.setItems(List.of(items));
         return request;
@@ -259,3 +262,4 @@ class OrderServiceTest {
         return request;
     }
 }
+

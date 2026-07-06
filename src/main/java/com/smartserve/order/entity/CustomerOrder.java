@@ -38,8 +38,8 @@ public class CustomerOrder extends BaseEntity {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "table_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "table_id")
     private RestaurantTable table;
 
     @Enumerated(EnumType.STRING)

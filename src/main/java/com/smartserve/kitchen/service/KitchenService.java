@@ -120,7 +120,9 @@ public class KitchenService {
                 .filter(value -> value != null).max(Integer::compareTo).orElse(0);
         return new KitchenTicketResponse(
                 order.getId(), order.getBranch().getId(), order.getBranch().getName(),
-                order.getTable().getId(), order.getTable().getTableNumber(), order.getCustomerName(),
+                order.getTable() == null ? null : order.getTable().getId(),
+                order.getTable() == null ? null : order.getTable().getTableNumber(),
+                order.getCustomerName(),
                 order.getOrderStatus(), order.getSpecialInstructions(), order.getCreatedAt(),
                 order.getPreparationStartedAt(), order.getReadyAt(), estimate, items);
     }
@@ -130,3 +132,4 @@ public class KitchenService {
                 item.getQuantity(), item.getMenuItem().getPreparationTimeMinutes());
     }
 }
+

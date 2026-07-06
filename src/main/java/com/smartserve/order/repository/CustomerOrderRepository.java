@@ -91,7 +91,9 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
             select new com.smartserve.analytics.dto.TablePerformanceRow(
                 o.table.tableNumber, count(o), sum(o.totalAmount))
             from CustomerOrder o
-            where o.orderStatus = :status and o.createdAt >= :from and o.createdAt < :to
+            where o.orderStatus = :status
+              and o.table is not null
+              and o.createdAt >= :from and o.createdAt < :to
             group by o.table.id, o.table.tableNumber
             order by sum(o.totalAmount) desc, o.table.tableNumber asc
             """)
@@ -99,3 +101,5 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
                                                         @Param("from") Instant from,
                                                         @Param("to") Instant to);
 }
+
+

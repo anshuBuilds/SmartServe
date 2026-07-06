@@ -40,7 +40,7 @@ public class OrderWorkflowService {
         CustomerOrder order = find(orderId);
         requireStatus(order, OrderStatus.READY, "Only READY orders can be served");
         order.setOrderStatus(OrderStatus.SERVED);
-        order.getTable().setStatus(TableStatus.AVAILABLE);
+        releaseTable(order);
         orderRepository.flush();
         return order;
     }
@@ -51,7 +51,7 @@ public class OrderWorkflowService {
             throw new ConflictException("Only PENDING or PREPARING orders can be cancelled");
         }
         order.setOrderStatus(OrderStatus.CANCELLED);
-        order.getTable().setStatus(TableStatus.AVAILABLE);
+        releaseTable(order);
         orderRepository.flush();
         return order;
     }
@@ -72,14 +72,14 @@ public class OrderWorkflowService {
             case SERVED -> {
                 requireStatus(order, OrderStatus.READY, "Only READY orders can be served");
                 order.setOrderStatus(OrderStatus.SERVED);
-                order.getTable().setStatus(TableStatus.AVAILABLE);
+                releaseTable(order);
             }
             case CANCELLED -> {
                 if (order.getOrderStatus() != OrderStatus.PENDING && order.getOrderStatus() != OrderStatus.PREPARING) {
                     throw new ConflictException("Only PENDING or PREPARING orders can be cancelled");
                 }
                 order.setOrderStatus(OrderStatus.CANCELLED);
-                order.getTable().setStatus(TableStatus.AVAILABLE);
+                releaseTable(order);
             }
             case PENDING -> throw new ConflictException("Orders cannot transition back to PENDING");
         }
@@ -101,10 +101,18 @@ public class OrderWorkflowService {
         return order;
     }
 
+    private void releaseTable(CustomerOrder order) {
+        if (order.getTable() != null) {
+            order.getTable().setStatus(TableStatus.AVAILABLE);
+        }
+    }
+
     private void requireStatus(CustomerOrder order, OrderStatus expected, String message) {
         if (order.getOrderStatus() != expected) {
             throw new ConflictException(message);
         }
     }
 }
+
+
 

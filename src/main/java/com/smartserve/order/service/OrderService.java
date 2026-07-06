@@ -12,6 +12,7 @@ import com.smartserve.order.dto.UpdateOrderStatusRequest;
 import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.entity.OrderItem;
 import com.smartserve.order.enums.OrderStatus;
+import com.smartserve.order.enums.OrderType;
 import com.smartserve.order.repository.CustomerOrderRepository;
 import com.smartserve.restaurant.entity.Branch;
 import com.smartserve.restaurant.entity.RestaurantTable;
@@ -39,22 +40,52 @@ public class OrderService {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new BadRequestException("Order must contain at least one item");
         }
+        if (request.getOrderType() == null) {
+            throw new BadRequestException("Order type is required");
+        }
+        if (request.getSmsConsent() == null) {
+            throw new BadRequestException("SMS consent choice is required");
+        }
 
         Branch branch = branchRepository.findById(request.getBranchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
 
-        RestaurantTable table = tableRepository
-                .findForUpdateByIdAndBranchId(request.getTableId(), request.getBranchId())
-                .orElseThrow(() -> new ResourceNotFoundException("Table not found in this branch"));
+        RestaurantTable table = null;
 
-        if (table.getStatus() != TableStatus.AVAILABLE) {
-            throw new BadRequestException("Table is not available");
+        if (request.getOrderType() == OrderType.DINE_IN) {
+            if (request.getTableId() == null) {
+                throw new BadRequestException("Table ID is required for dine-in orders");
+            }
+
+            table = tableRepository
+                    .findForUpdateByIdAndBranchId(
+                            request.getTableId(),
+                            request.getBranchId()
+                    )
+                    .orElseThrow(() -> new ResourceNotFoundException("Table not found in this branch"));
+
+            if (table.getStatus() != TableStatus.AVAILABLE) {
+                throw new BadRequestException("Table is not available");
+            }
+        } else if (request.getTableId() != null) {
+            throw new BadRequestException("Takeaway orders must not contain a table ID");
+        }
+
+        String customerPhone = normalizePhone(request.getCustomerPhone());
+        if (request.getOrderType() == OrderType.TAKEAWAY && customerPhone == null) {
+            throw new BadRequestException("Customer phone is required for takeaway orders");
+        }
+        if (Boolean.TRUE.equals(request.getSmsConsent()) && customerPhone == null) {
+            throw new BadRequestException("Customer phone is required when SMS consent is enabled");
         }
 
         CustomerOrder order = new CustomerOrder();
         order.setBranch(branch);
         order.setTable(table);
         order.setCustomerName(request.getCustomerName().trim());
+        order.setOrderType(request.getOrderType());
+        order.setCustomerPhone(customerPhone);
+        order.setSmsConsent(request.getSmsConsent());
         order.setSpecialInstructions(request.getSpecialInstructions());
         order.setOrderStatus(OrderStatus.PENDING);
 
@@ -84,7 +115,9 @@ public class OrderService {
         }
 
         order.setTotalAmount(totalAmount);
-        table.setStatus(TableStatus.OCCUPIED);
+        if (table != null) {
+            table.setStatus(TableStatus.OCCUPIED);
+        }
 
         CustomerOrder savedOrder = customerOrderRepo.save(order);
         return toOrderResponse(savedOrder);
@@ -163,9 +196,12 @@ public class OrderService {
                 order.getId(),
                 order.getBranch().getId(),
                 order.getBranch().getName(),
-                order.getTable().getId(),
-                order.getTable().getTableNumber(),
+                order.getTable() == null ? null : order.getTable().getId(),
+                order.getTable() == null ? null : order.getTable().getTableNumber(),
                 order.getCustomerName(),
+                order.getOrderType(),
+                maskPhone(order.getCustomerPhone()),
+                order.getSmsConsent(),
                 order.getOrderStatus(),
                 order.getTotalAmount(),
                 order.getSpecialInstructions(),
@@ -173,6 +209,26 @@ public class OrderService {
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return null;
+        }
+
+        String normalized = phone.replaceAll("[\\s()-]", "");
+        if (!normalized.matches("^\\+[1-9]\\d{7,14}$")) {
+            throw new BadRequestException("Customer phone must use international format");
+        }
+        return normalized;
+    }
+    private String maskPhone(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        int visibleDigits = Math.min(4, phone.length());
+        return "*".repeat(phone.length() - visibleDigits)
+                + phone.substring(phone.length() - visibleDigits);
     }
 
     private OrderItemResponse toOrderItemResponse(OrderItem item) {
@@ -188,3 +244,6 @@ public class OrderService {
         );
     }
 }
+
+
+
