@@ -54,6 +54,8 @@ public class CustomerOrder extends BaseEntity {
 
     private Instant preparationStartedAt;
     private Instant readyAt;
+    @Column(name = "tracking_token", unique = true, length = 64)
+    private String trackingToken;
 
     @Version
     private Long version;

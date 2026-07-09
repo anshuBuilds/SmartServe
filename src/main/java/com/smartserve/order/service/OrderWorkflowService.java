@@ -3,6 +3,7 @@ package com.smartserve.order.service;
 import com.smartserve.common.exception.ConflictException;
 import com.smartserve.common.exception.ForbiddenException;
 import com.smartserve.common.exception.ResourceNotFoundException;
+import com.smartserve.notification.service.NotificationService;
 import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.repository.CustomerOrderRepository;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class OrderWorkflowService {
     private final CustomerOrderRepository orderRepository;
+    private final NotificationService notificationService;
 
     public CustomerOrder startPreparation(Long orderId, Long branchId) {
         CustomerOrder order = findForBranch(orderId, branchId);
@@ -32,6 +34,7 @@ public class OrderWorkflowService {
         requireStatus(order, OrderStatus.PREPARING, "Only PREPARING tickets can be marked ready");
         order.setOrderStatus(OrderStatus.READY);
         order.setReadyAt(Instant.now());
+        notificationService.notifyOrderReady(order);
         orderRepository.flush();
         return order;
     }
@@ -41,6 +44,7 @@ public class OrderWorkflowService {
         requireStatus(order, OrderStatus.READY, "Only READY orders can be served");
         order.setOrderStatus(OrderStatus.SERVED);
         releaseTable(order);
+        notificationService.notifyOrderServed(order);
         orderRepository.flush();
         return order;
     }
@@ -52,6 +56,7 @@ public class OrderWorkflowService {
         }
         order.setOrderStatus(OrderStatus.CANCELLED);
         releaseTable(order);
+        notificationService.notifyOrderCancelled(order);
         orderRepository.flush();
         return order;
     }
@@ -68,11 +73,13 @@ public class OrderWorkflowService {
                 requireStatus(order, OrderStatus.PREPARING, "Only PREPARING tickets can be marked ready");
                 order.setOrderStatus(OrderStatus.READY);
                 order.setReadyAt(Instant.now());
+                notificationService.notifyOrderReady(order);
             }
             case SERVED -> {
                 requireStatus(order, OrderStatus.READY, "Only READY orders can be served");
                 order.setOrderStatus(OrderStatus.SERVED);
                 releaseTable(order);
+                notificationService.notifyOrderServed(order);
             }
             case CANCELLED -> {
                 if (order.getOrderStatus() != OrderStatus.PENDING && order.getOrderStatus() != OrderStatus.PREPARING) {
@@ -80,6 +87,7 @@ public class OrderWorkflowService {
                 }
                 order.setOrderStatus(OrderStatus.CANCELLED);
                 releaseTable(order);
+                notificationService.notifyOrderCancelled(order);
             }
             case PENDING -> throw new ConflictException("Orders cannot transition back to PENDING");
         }

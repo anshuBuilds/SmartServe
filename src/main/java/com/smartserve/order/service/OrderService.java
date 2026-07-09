@@ -4,6 +4,7 @@ import com.smartserve.common.exception.BadRequestException;
 import com.smartserve.common.exception.ResourceNotFoundException;
 import com.smartserve.menu.entity.MenuItem;
 import com.smartserve.menu.repository.MenuItemRepository;
+import com.smartserve.notification.service.NotificationService;
 import com.smartserve.order.dto.CreateOrderItemRequest;
 import com.smartserve.order.dto.CreateOrderRequest;
 import com.smartserve.order.dto.OrderItemResponse;
@@ -21,6 +22,7 @@ import com.smartserve.restaurant.repository.BranchRepository;
 import com.smartserve.restaurant.repository.RestaurantTableRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,7 @@ public class OrderService {
     private final BranchRepository branchRepository;
     private final RestaurantTableRepository tableRepository;
     private final OrderWorkflowService workflowService;
+    private final NotificationService notificationService;
 
     public OrderResponse createOrder(CreateOrderRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
@@ -120,8 +123,30 @@ public class OrderService {
         }
 
         CustomerOrder savedOrder = customerOrderRepo.save(order);
+        notificationService.notifyOrderCreated(savedOrder);
         return toOrderResponse(savedOrder);
     }
+
+    public OrderResponse createGuestOrder(RestaurantTable table, CreateOrderRequest request) {
+        request.setBranchId(table.getBranch().getId());
+        request.setTableId(table.getId());
+        request.setOrderType(OrderType.DINE_IN);
+        OrderResponse response = createOrder(request);
+        CustomerOrder order = findOrder(response.id());
+        order.setTrackingToken(UUID.randomUUID().toString().replace("-", ""));
+        return toOrderResponse(order);
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerOrder getOrderByTrackingToken(String token) {
+        return customerOrderRepo.findByTrackingToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Tracked order not found"));
+    }
+
+    public OrderResponse mapOrder(CustomerOrder order) { return toOrderResponse(order); }
+
+    @Transactional(readOnly = true)
+    public String getTrackingToken(Long orderId) { return findOrder(orderId).getTrackingToken(); }
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders() {
@@ -244,6 +269,4 @@ public class OrderService {
         );
     }
 }
-
-
 

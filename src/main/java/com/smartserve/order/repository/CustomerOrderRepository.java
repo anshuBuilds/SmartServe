@@ -22,6 +22,7 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
     List<CustomerOrder> findByTableIdAndOrderStatus(Long tableId, OrderStatus orderStatus);
     List<CustomerOrder> findByBranchId(Long branchId);
     List<CustomerOrder> findByBranchIdAndOrderStatus(Long branchId, OrderStatus orderStatus);
+    Optional<CustomerOrder> findByTrackingToken(String trackingToken);
 
     @EntityGraph(attributePaths = {"branch", "table", "items", "items.menuItem"})
     @Query("""
@@ -101,5 +102,4 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
                                                         @Param("from") Instant from,
                                                         @Param("to") Instant to);
 }
-
 

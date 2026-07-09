@@ -83,4 +83,9 @@ public class BranchController {
                 table
         );
     }
+
+    @PostMapping("/{branchId}/tables/{tableId}/qr-token/rotate")
+    public ApiResponse<TableResponse> rotateQr(@PathVariable Long branchId, @PathVariable Long tableId) {
+        return ApiResponse.success("QR token rotated", restaurantService.rotateTableQrToken(branchId, tableId));
+    }
 }

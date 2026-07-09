@@ -9,6 +9,7 @@ public record TableResponse(
         String tableNumber,
         Integer capacity,
         TableStatus status,
+        String qrToken,
         Instant createdAt,
         Instant updatedAt
 ) {

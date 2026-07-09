@@ -22,6 +22,7 @@ public interface RestaurantTableRepository
             Long tableId,
             Long branchId
     );
+    Optional<RestaurantTable> findByQrToken(String qrToken);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<RestaurantTable> findForUpdateByIdAndBranchId(

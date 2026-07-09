@@ -5,6 +5,7 @@ import com.smartserve.restaurant.enums.TableStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -33,4 +34,12 @@ public class RestaurantTable extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private TableStatus status = TableStatus.AVAILABLE;
+
+    @Column(name = "qr_token", unique = true, length = 64)
+    private String qrToken;
+
+    @PrePersist
+    void ensureQrToken() {
+        if (qrToken == null) qrToken = UUID.randomUUID().toString().replace("-", "");
+    }
 }

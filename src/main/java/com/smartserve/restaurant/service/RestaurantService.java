@@ -17,6 +17,7 @@ import com.smartserve.restaurant.repository.BranchRepository;
 import com.smartserve.restaurant.repository.RestaurantRepository;
 import com.smartserve.restaurant.repository.RestaurantTableRepository;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -161,14 +162,13 @@ public class RestaurantService {
         return toTableResponse(savedTable);
     }
 
-    @Transactional(readOnly = true)
     public List<TableResponse> getTables(Long branchId) {
         // Distinguishes "branch not found" from "no tables".
         findBranch(branchId);
 
         return tableRepository
                 .findByBranchIdOrderByTableNumberAsc(branchId)
-                .stream()
+                .stream().peek(this::ensureQrToken)
                 .map(this::toTableResponse)
                 .toList();
     }
@@ -195,6 +195,18 @@ public class RestaurantService {
          */
         return toTableResponse(table);
     }
+
+    public TableResponse rotateTableQrToken(Long branchId, Long tableId) {
+        RestaurantTable table = tableRepository.findByIdAndBranchId(tableId, branchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found in this branch"));
+        table.setQrToken(newQrToken());
+        return toTableResponse(table);
+    }
+
+    private void ensureQrToken(RestaurantTable table) {
+        if (table.getQrToken() == null || table.getQrToken().isBlank()) table.setQrToken(newQrToken());
+    }
+    private String newQrToken() { return UUID.randomUUID().toString().replace("-", ""); }
 
     /*
      * Entity lookup helpers
@@ -258,6 +270,7 @@ public class RestaurantService {
                 table.getTableNumber(),
                 table.getCapacity(),
                 table.getStatus(),
+                table.getQrToken(),
                 table.getCreatedAt(),
                 table.getUpdatedAt()
         );
