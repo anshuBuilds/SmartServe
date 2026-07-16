@@ -3,6 +3,7 @@ package com.smartserve.order.entity;
 import com.smartserve.common.entity.BaseEntity;
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.enums.OrderType;
+import com.smartserve.order.enums.PaymentMethod;
 import com.smartserve.order.enums.PaymentStatus;
 import com.smartserve.restaurant.entity.Branch;
 import com.smartserve.restaurant.entity.RestaurantTable;
@@ -51,6 +52,24 @@ public class CustomerOrder extends BaseEntity {
     @Column(nullable = false, length = 30)
     private PaymentStatus paymentStatus = PaymentStatus.NOT_REQUIRED;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
+
+    @Column(length = 100)
+    private String razorpayOrderId;
+
+    @Column(length = 100)
+    private String razorpayPaymentId;
+
+    @Column(length = 255)
+    private String razorpaySignature;
+
+    private Instant paidAt;
+
+    @Column(length = 500)
+    private String paymentFailureReason;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
@@ -58,7 +77,9 @@ public class CustomerOrder extends BaseEntity {
     private String specialInstructions;
 
     private Instant preparationStartedAt;
+
     private Instant readyAt;
+
     @Column(name = "tracking_token", unique = true, length = 64)
     private String trackingToken;
 
