@@ -8,7 +8,11 @@ import com.smartserve.order.dto.CreateOrderRequest;
 import com.smartserve.order.dto.OrderResponse;
 import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.enums.OrderType;
+import com.smartserve.order.enums.PaymentMethod;
+import com.smartserve.order.enums.PaymentStatus;
 import com.smartserve.order.service.OrderService;
+import com.smartserve.payment.dto.PaymentOrderResponse;
+import com.smartserve.payment.service.PaymentService;
 import com.smartserve.restaurant.entity.RestaurantTable;
 import com.smartserve.restaurant.enums.TableStatus;
 import com.smartserve.restaurant.repository.RestaurantTableRepository;
@@ -21,6 +25,7 @@ public class GuestService {
     private final RestaurantTableRepository tableRepository;
     private final MenuService menuService;
     private final OrderService orderService;
+    private final PaymentService paymentService;
 
     @Transactional(readOnly = true)
     public GuestSessionResponse session(String token) {
@@ -38,7 +43,7 @@ public class GuestService {
     }
 
     @Transactional
-    public GuestOrderCreatedResponse createOrder(String token, GuestOrderRequest guest) {
+    public GuestOrderPaymentResponse createOrder(String token, GuestOrderRequest guest) {
         RestaurantTable table = findTable(token);
         if (table.getStatus() != TableStatus.AVAILABLE) throw new BadRequestException("Table is not available");
         CreateOrderRequest request = new CreateOrderRequest();
@@ -48,10 +53,23 @@ public class GuestService {
         request.setSpecialInstructions(guest.getSpecialInstructions());
         request.setItems(guest.getItems());
         request.setOrderType(OrderType.DINE_IN);
+
         OrderResponse response = orderService.createGuestOrder(table, request);
-        CustomerOrder saved = orderService.getOrderByTrackingToken(
+
+        CustomerOrder savedOrder = orderService.getOrderByTrackingToken(
                 orderService.getOrderByTrackingToken(findTrackingToken(response.id())).getTrackingToken());
-        return new GuestOrderCreatedResponse(saved.getTrackingToken(), response);
+
+        savedOrder.setPaymentMethod(PaymentMethod.RAZORPAY);
+        savedOrder.setPaymentStatus(PaymentStatus.PENDING);
+
+        PaymentOrderResponse payment = paymentService.createRazorpayOrder(savedOrder);
+        OrderResponse updatedOrder = orderService.mapOrder(savedOrder);
+
+        return new GuestOrderPaymentResponse(
+                savedOrder.getTrackingToken(),
+                updatedOrder,
+                payment
+        );
     }
 
     @Transactional(readOnly = true)
