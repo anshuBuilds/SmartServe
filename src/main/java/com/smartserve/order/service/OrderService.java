@@ -40,6 +40,10 @@ public class OrderService {
     private final NotificationService notificationService;
 
     public OrderResponse createOrder(CreateOrderRequest request) {
+        return createOrder(request, true);
+    }
+
+    public OrderResponse createOrder(CreateOrderRequest request, boolean notifyOnCreate) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new BadRequestException("Order must contain at least one item");
         }
@@ -123,7 +127,11 @@ public class OrderService {
         }
 
         CustomerOrder savedOrder = customerOrderRepo.save(order);
-        notificationService.notifyOrderCreated(savedOrder);
+
+        if (notifyOnCreate) {
+            notificationService.notifyOrderCreated(savedOrder);
+        }
+
         return toOrderResponse(savedOrder);
     }
 
