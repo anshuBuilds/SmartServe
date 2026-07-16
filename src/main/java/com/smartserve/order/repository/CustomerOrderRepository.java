@@ -28,6 +28,10 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
     @Query("""
             select o from CustomerOrder o
             where o.branch.id = :branchId and o.orderStatus in :statuses
+                         and (
+                                      o.paymentStatus = com.smartserve.order.enums.PaymentStatus.NOT_REQUIRED
+                                      or o.paymentStatus = com.smartserve.order.enums.PaymentStatus.PAID
+                                  )
             order by case o.orderStatus
                 when com.smartserve.order.enums.OrderStatus.PENDING then 0
                 when com.smartserve.order.enums.OrderStatus.PREPARING then 1

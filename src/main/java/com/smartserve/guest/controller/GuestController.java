@@ -13,17 +13,23 @@ import org.springframework.web.bind.annotation.*;
 @RestController @RequestMapping("/api/guest") @RequiredArgsConstructor
 public class GuestController {
     private final GuestService guestService;
-    @GetMapping("/session/{token}") public ApiResponse<GuestSessionResponse> session(@PathVariable String token) {
+    @GetMapping("/session/{token}")
+    public ApiResponse<GuestSessionResponse> session(@PathVariable String token) {
         return ApiResponse.success(guestService.session(token));
     }
-    @GetMapping("/menu/{token}") public ApiResponse<GuestMenuResponse> menu(@PathVariable String token) {
+    @GetMapping("/menu/{token}")
+    public ApiResponse<GuestMenuResponse> menu(@PathVariable String token) {
         return ApiResponse.success(guestService.menu(token));
     }
-    @PostMapping("/orders/{token}") public ResponseEntity<ApiResponse<GuestOrderCreatedResponse>> order(
+    @PostMapping("/orders/{token}")
+    public ResponseEntity<ApiResponse<GuestOrderPaymentResponse>> order(
             @PathVariable String token, @Valid @RequestBody GuestOrderRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Order created", guestService.createOrder(token, request)));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+        .body(ApiResponse.success("Order created", guestService.createOrder(token, request)));
     }
-    @GetMapping("/orders/{trackingToken}") public ApiResponse<OrderResponse> tracked(@PathVariable String trackingToken) {
+    @GetMapping("/orders/{trackingToken}")
+    public ApiResponse<OrderResponse> tracked(@PathVariable String trackingToken) {
         return ApiResponse.success(guestService.trackedOrder(trackingToken));
     }
 }
