@@ -3,6 +3,7 @@ package com.smartserve.order.entity;
 import com.smartserve.common.entity.BaseEntity;
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.enums.OrderType;
+import com.smartserve.order.enums.PaymentStatus;
 import com.smartserve.restaurant.entity.Branch;
 import com.smartserve.restaurant.entity.RestaurantTable;
 import jakarta.persistence.*;
@@ -45,6 +46,10 @@ public class CustomerOrder extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus orderStatus = OrderStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private PaymentStatus paymentStatus = PaymentStatus.NOT_REQUIRED;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount = BigDecimal.ZERO;

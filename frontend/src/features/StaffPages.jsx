@@ -1,4 +1,4 @@
-﻿import {useMemo} from 'react'
+import {useMemo,useState} from 'react'
 import {useQuery,useMutation,useQueryClient} from '@tanstack/react-query'
 import {useSearchParams} from 'react-router-dom'
 import {api} from '../api/client'
@@ -11,36 +11,43 @@ const COLORS=['#d45b32','#173c36','#e3a33b','#6c8ebf','#7a7f86']
 const MS_PER_DAY=86400000
 const Loader=()=> <div className="state"><div className="spinner"/>Loading live data…</div>
 const ErrorState=({error})=><div className="state error">{error.message}</div>
+const Select=({label,children,...props})=><label>{label}<select {...props}>{children}</select></label>
 const dateInput=date=>date.toISOString().slice(0,10)
 const startOfDayIso=value=>new Date(`${value}T00:00:00`).toISOString()
 const endOfDayIso=value=>new Date(`${value}T23:59:59`).toISOString()
 
 export function Dashboard({manager=false}){
-  const paths=manager?['/orders','/kitchen/tickets']:['/restaurants','/users']
-  const q=useQuery({queryKey:['dashboard',manager],queryFn:()=>Promise.all(paths.map(p=>api.get(p)))})
+  const {user}=useAuth()
+  const branchParam=manager&&user.branchId?`?branchId=${user.branchId}`:''
+  const paths=manager?[`/orders${branchParam}`,`/kitchen/tickets${branchParam}`]:['/restaurants','/users']
+  const q=useQuery({queryKey:['dashboard',manager,user.branchId||'all'],queryFn:()=>Promise.all(paths.map(path=>api.get(path))),refetchInterval:manager?5000:false})
   const data=q.data||[[],[]]
+  const activeOrders=manager&&Array.isArray(data[0])?data[0].filter(o=>!['SERVED','CANCELLED'].includes(o.orderStatus)).length:Array.isArray(data[0])?data[0].length:data[0]?.tickets?.length||0
+  const kitchenTickets=manager?(data[1]?.tickets?.length||0):Array.isArray(data[1])?data[1].length:data[1]?.tickets?.length||0
   return <Page title={manager?'Manager overview':'Good service starts here'} subtitle="A live pulse of your operation.">
-    {q.isLoading?<Loader/>:<div className="stats">
-      <Stat label={manager?'Active orders':'Restaurants'} value={Array.isArray(data[0])?data[0].length:data[0]?.tickets?.length||0}/>
-      <Stat label={manager?'Kitchen tickets':'Team members'} value={Array.isArray(data[1])?data[1].length:data[1]?.tickets?.length||0}/>
+    {q.isLoading?<Loader/>:q.error?<ErrorState error={q.error}/>:<div className="stats">
+      <Stat label={manager?'Active orders':'Restaurants'} value={activeOrders}/>
+      <Stat label={manager?'Kitchen tickets':'Team members'} value={kitchenTickets}/>
       <Stat label="System status" value="Online" tone="good"/>
     </div>}
   </Page>
 }
 
 export function MenuPage(){
-  const q=useQuery({queryKey:menuKeys.items(),queryFn:()=>api.get('/menu/items')})
-  return <Page title="Menu" subtitle="Everything guests can order.">
-    {q.isLoading?<Loader/>:q.error?<ErrorState error={q.error}/>:<div className="menuGrid">
-      {q.data.map(item=><article className="card menuItem" key={item.id}>
-        <div className="foodIcon">{item.foodType==='VEG'?'?':'?'}</div>
-        <div><span className="eyebrow">{item.foodType} · {item.spiceLevel}</span><h3>{item.name}</h3><p>{item.description}</p><b>{money(item.price)}</b></div>
-        <span className={`badge ${item.available?'green':'gray'}`}>{item.available?'Available':'Unavailable'}</span>
-      </article>)}
-    </div>}
+  const [activeCategory,setActiveCategory]=useState('all')
+  const [search,setSearch]=useState('')
+  const items=useQuery({queryKey:menuKeys.items(),queryFn:()=>api.get('/menu/items')})
+  const cats=useQuery({queryKey:menuKeys.categories(),queryFn:()=>api.get('/menu/categories?activeOnly=true')})
+  const visible=(items.data||[]).filter(i=>(activeCategory==='all'||String(i.categoryId)===String(activeCategory))&&(`${i.name} ${i.description||''}`.toLowerCase().includes(search.toLowerCase())))
+  const categories=(cats.data||[]).filter(c=>(items.data||[]).some(i=>String(i.categoryId)===String(c.id)))
+  return <Page title="Menu" subtitle="Browse dishes by category, with availability and prep details.">
+    {items.isLoading?<Loader/>:items.error?<ErrorState error={items.error}/>:<>
+      <div className="card orderToolbar menuBrowseToolbar"><input className="menuSearch" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search the menu…"/><span>{visible.length} items</span></div>
+      <div className="categoryRail"><button className={activeCategory==='all'?'active':''} onClick={()=>setActiveCategory('all')}>All</button>{categories.map(c=><button className={String(activeCategory)===String(c.id)?'active':''} onClick={()=>setActiveCategory(c.id)} key={c.id}>{c.name}</button>)}</div>
+      <div className="foodCardGrid">{visible.map(item=><article className="card foodCard" key={item.id}><div className="foodPhoto">{item.imageUrl?<img src={item.imageUrl} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<span>{item.foodType==='VEG'?'🌿':'🍽️'}</span>}</div><div className="foodInfo"><span className="eyebrow">{item.categoryName} · {item.foodType} · {item.spiceLevel}</span><h3>{item.name}</h3><p>{item.description}</p><div className="foodMeta"><b>{money(item.price)}</b><small>{item.preparationTimeMinutes} min</small><span className={`badge ${item.available?'green':'gray'}`}>{item.available?'Available':'Unavailable'}</span></div></div></article>)}</div>
+    </>}
   </Page>
 }
-
 export function OrdersPage(){
   const {user}=useAuth()
   const filters={branchId:user.branchId||null}
@@ -59,19 +66,29 @@ export function OrdersPage(){
 }
 
 export function KitchenPage(){
-  const q=useQuery({queryKey:kitchenKeys.queue(),queryFn:()=>api.get('/kitchen/tickets'),refetchInterval:5000})
+  const {user}=useAuth()
+  const needsBranch=['ADMIN','MANAGER'].includes(user.role)
+  const [restaurant,setRestaurant]=useState('')
+  const [selectedBranch,setSelectedBranch]=useState(user.branchId||'')
+  const branchId=needsBranch?(user.branchId||Number(selectedBranch)||null):null
+  const restaurants=useQuery({queryKey:['restaurants','kitchen'],queryFn:()=>api.get('/restaurants'),enabled:needsBranch&&!user.branchId})
+  const branches=useQuery({queryKey:['branches','kitchen',restaurant],queryFn:()=>api.get(`/restaurants/${restaurant}/branches`),enabled:needsBranch&&!user.branchId&&Boolean(restaurant)})
+  const queryString=branchId?`?branchId=${branchId}`:''
+  const q=useQuery({queryKey:kitchenKeys.queue({branchId:branchId||'assigned'}),queryFn:()=>api.get(`/kitchen/tickets${queryString}`),refetchInterval:5000,enabled:!needsBranch||Boolean(branchId)})
   const qc=useQueryClient()
-  const move=useMutation({mutationFn:({id,status})=>api.patch(`/kitchen/tickets/${id}/${status==='PENDING'?'start':'ready'}`),onSettled:()=>qc.invalidateQueries({queryKey:['kitchen']})})
+  const move=useMutation({mutationFn:({id,status})=>api.patch(`/kitchen/tickets/${id}/${status==='PENDING'?'start':'ready'}${queryString}`),onSettled:()=>qc.invalidateQueries({queryKey:['kitchen']})})
   const tickets=q.data?.tickets||q.data||[]
   return <Page title="Kitchen board" subtitle="New tickets on the left. Ready food on the right.">
-    {q.isLoading?<Loader/>:q.error?<ErrorState error={q.error}/>:<div className="board">
+    {needsBranch&&!user.branchId&&<div className="card branchChooser kitchenBranchChooser"><Select label="Restaurant" value={restaurant} onChange={e=>{setRestaurant(e.target.value);setSelectedBranch('')}}><option value="">Choose restaurant</option>{restaurants.data?.map(r=><option value={r.id} key={r.id}>{r.name}</option>)}</Select><Select label="Kitchen branch" value={selectedBranch} onChange={e=>setSelectedBranch(e.target.value)} disabled={!restaurant}><option value="">Choose branch</option>{branches.data?.map(b=><option value={b.id} key={b.id}>{b.name}</option>)}</Select></div>}
+    {needsBranch&&!branchId?<div className="state">Choose a branch to open the kitchen recovery board.</div>:q.isLoading?<Loader/>:q.error?<ErrorState error={q.error}/>:<div className="board">
       {['PENDING','PREPARING','READY'].map(status=><section key={status}>
         <header><h3>{status==='PENDING'?'New':status[0]+status.slice(1).toLowerCase()}</h3><span>{tickets.filter(t=>(t.orderStatus||t.status)===status).length}</span></header>
+        {tickets.filter(t=>(t.orderStatus||t.status)===status).length===0&&<div className="columnEmpty">No {status.toLowerCase()} tickets.</div>}
         {tickets.filter(t=>(t.orderStatus||t.status)===status).map(t=><article className="card ticket" key={t.orderId}>
           <b>#{t.orderId} · {t.tableNumber?`Table ${t.tableNumber}`:'Takeaway'}</b>
           <p>{t.items?.map(i=>`${i.quantity}× ${i.itemName}`).join(', ')}</p>
           {t.specialInstructions&&<div className="note">{t.specialInstructions}</div>}
-          {status!=='READY'&&<button className="primary" disabled={move.isPending} onClick={()=>move.mutate({id:t.orderId,status})}>{status==='PENDING'?'Start preparation':'Mark ready'}</button>}
+          {status!=='READY'&&<button className="primary" disabled={move.isPending} onClick={()=>move.mutate({id:t.orderId,status})}>{status==='PENDING'?'Start prep':'Mark ready'}</button>}
         </article>)}
       </section>)}
     </div>}

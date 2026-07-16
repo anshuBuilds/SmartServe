@@ -58,14 +58,16 @@ export function NotificationBell(){
           <div><b>Notifications</b><small>{unread?`${unread} unread`:'All caught up'}</small></div>
           <button className="icon" disabled={!unread||readAll.isPending} title="Mark all read" onClick={()=>readAll.mutate()}><CheckCheck size={18}/></button>
         </header>
-        {inbox.isLoading&&<div className="state compactState">Loading…</div>}
-        {inbox.error&&<div className="state error compactState">{inbox.error.message}</div>}
-        {!inbox.isLoading&&!preview.length&&<div className="compactEmpty">No notifications yet.</div>}
-        {preview.map(n=><button className={`notificationMini ${isUnread(n)?'unread':''}`} key={n.id} onClick={()=>openNotification(n)}>
-          <span>{n.type?.replaceAll('_',' ')||'Notification'} · {shortTime(n.createdAt)}</span>
-          <b>{n.title}</b>
-          <small>{n.message}</small>
-        </button>)}
+        <div className="notificationPreviewList">
+          {inbox.isLoading&&<div className="state compactState">Loading…</div>}
+          {inbox.error&&<div className="state error compactState">{inbox.error.message}</div>}
+          {!inbox.isLoading&&!preview.length&&<div className="compactEmpty">No notifications yet.</div>}
+          {preview.map(n=><button className={`notificationMini ${isUnread(n)?'unread':''}`} key={n.id} onClick={()=>openNotification(n)}>
+            <span>{n.type?.replaceAll('_',' ')||'Notification'} · {shortTime(n.createdAt)}</span>
+            <b>{n.title}</b>
+            <small>{n.message}</small>
+          </button>)}
+        </div>
         <Link className="notificationFooter" to="/app/notifications" onClick={()=>setOpen(false)}>
           View full inbox <ExternalLink size={14}/>
         </Link>

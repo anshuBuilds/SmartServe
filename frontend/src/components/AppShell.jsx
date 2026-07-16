@@ -1,4 +1,4 @@
-﻿import {BarChart3,Bell,ChefHat,ClipboardList,LayoutDashboard,LogOut,Menu as MenuIcon,Store,Users,X} from 'lucide-react'
+import {BarChart3,Bell,ChefHat,ClipboardList,LayoutDashboard,LogOut,Menu as MenuIcon,Store,Users,X} from 'lucide-react'
 import {NavLink,Outlet} from 'react-router-dom'
 import {useState} from 'react'
 import {useAuth} from '../auth/AuthProvider'
@@ -37,11 +37,15 @@ export function AppShell(){
         <div><b>SmartServe</b><small>Restaurant OS</small></div>
         <button className="icon close" onClick={()=>setOpen(false)}><X/></button>
       </div>
-      <nav>{links.filter(x=>x[3].includes(user.role)).map(([label,to,Icon])=><NavLink key={to} to={to} onClick={()=>setOpen(false)}><Icon/>{label}</NavLink>)}</nav>
-      <div className="profile">
+      <nav>{links.filter(x=>x[3].includes(user.role)).map(([label,to,Icon])=><NavLink key={to} to={to} end onClick={()=>setOpen(false)}><Icon/>{label}</NavLink>)}</nav>
+      <div className="profile staffCard">
         <div className="avatar">{initials}</div>
-        <div><b>{user.fullName||user.username}</b><small>{user.role}{user.branchName?` · ${user.branchName}`:''}</small></div>
-        <button className="icon" onClick={logout} title="Log out"><LogOut/></button>
+        <div className="profileMeta">
+          <b title={user.fullName||user.username}>{user.fullName||user.username}</b>
+          <span className="rolePill">{user.role}</span>
+          {user.branchName&&<small title={user.branchName}>{user.branchName}</small>}
+        </div>
+        <button className="icon logoutButton" onClick={logout} title="Log out" aria-label="Log out"><LogOut/></button>
       </div>
     </aside>
 

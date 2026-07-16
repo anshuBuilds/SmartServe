@@ -32,3 +32,8 @@ app:
       username: ${SMARTSERVE_ADMIN_USERNAME:admin}
       password: ${SMARTSERVE_ADMIN_PASSWORD:admin12345}
       full-name: ${SMARTSERVE_ADMIN_FULL_NAME:System Admin}
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+  currency: ${RAZORPAY_CURRENCY:INR}
