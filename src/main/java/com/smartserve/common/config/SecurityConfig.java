@@ -75,6 +75,10 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/branches/*/tables/*/qr-token/rotate")
                         .hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/webhooks/razorpay"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(guestRateLimitFilter, UsernamePasswordAuthenticationFilter.class)

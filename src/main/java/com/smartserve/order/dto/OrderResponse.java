@@ -2,6 +2,8 @@ package com.smartserve.order.dto;
 
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.enums.OrderType;
+import com.smartserve.order.enums.PaymentMethod;
+import com.smartserve.order.enums.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,6 +20,9 @@ public record OrderResponse(
         String customerPhoneMasked,
         Boolean smsConsent,
         OrderStatus orderStatus,
+        PaymentStatus paymentStatus,
+        PaymentMethod paymentMethod,
+        Instant paidAt,
         BigDecimal totalAmount,
         String specialInstructions,
         List<OrderItemResponse> items,
@@ -25,3 +30,5 @@ public record OrderResponse(
         Instant updatedAt
 ) {
 }
+
+

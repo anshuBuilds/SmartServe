@@ -139,9 +139,12 @@ public class OrderService {
         request.setBranchId(table.getBranch().getId());
         request.setTableId(table.getId());
         request.setOrderType(OrderType.DINE_IN);
-        OrderResponse response = createOrder(request);
+
+        OrderResponse response = createOrder(request, false);
+
         CustomerOrder order = findOrder(response.id());
         order.setTrackingToken(UUID.randomUUID().toString().replace("-", ""));
+
         return toOrderResponse(order);
     }
 
@@ -236,6 +239,9 @@ public class OrderService {
                 maskPhone(order.getCustomerPhone()),
                 order.getSmsConsent(),
                 order.getOrderStatus(),
+                order.getPaymentStatus(),
+                order.getPaymentMethod(),
+                order.getPaidAt(),
                 order.getTotalAmount(),
                 order.getSpecialInstructions(),
                 itemResponses,
@@ -277,4 +283,6 @@ public class OrderService {
         );
     }
 }
+
+
 

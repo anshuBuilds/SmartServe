@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record RazorpayProperties(
         String keyId,
         String keySecret,
-        String currency
+        String currency,
+        String webhookSecret
 ) {
 }

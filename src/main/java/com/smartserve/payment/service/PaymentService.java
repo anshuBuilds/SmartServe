@@ -6,6 +6,7 @@ import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
 import com.smartserve.common.exception.BadRequestException;
 import com.smartserve.common.exception.ConflictException;
+import com.smartserve.notification.service.NotificationService;
 import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.enums.PaymentStatus;
 import com.smartserve.order.repository.CustomerOrderRepository;
@@ -14,7 +15,6 @@ import com.smartserve.payment.dto.PaymentOrderResponse;
 import com.smartserve.payment.dto.VerifyPaymentRequest;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +29,7 @@ public class PaymentService {
 
     private final RazorpayProperties razorpayProperties;
     private final CustomerOrderRepository customerOrderRepository;
+    private final NotificationService notificationService;
 
     public PaymentOrderResponse createRazorpayOrder(CustomerOrder order) {
         if(order.getTotalAmount() == null || order.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
@@ -109,7 +110,10 @@ public class PaymentService {
             order.setPaymentFailureReason(null);
             order.setPaidAt(Instant.now());
 
-            return customerOrderRepository.save(order);
+            CustomerOrder saved = customerOrderRepository.save(order);
+            notificationService.notifyOrderCreated(saved);
+
+            return saved;
         } catch (RazorpayException exception) {
             order.setPaymentStatus(PaymentStatus.FAILED);
             order.setPaymentFailureReason("Payment signature verification failed");
@@ -135,3 +139,4 @@ public class PaymentService {
                 + phone.substring(phone.length() - visibleDigits);
     }
 }
+
