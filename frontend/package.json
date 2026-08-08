@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "format": "prettier --write src eslint.config.js vite.config.js package.json",
+    "format:check": "prettier --check src eslint.config.js vite.config.js package.json"
   },
   "dependencies": {
     "@hookform/resolvers": "latest",
@@ -37,7 +39,16 @@
     "globals": "^17.9.0",
     "jsdom": "latest",
     "msw": "latest",
+    "prettier": "^3.9.6",
     "vite": "latest",
     "vitest": "latest"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "semi": false,
+    "trailingComma": "all",
+    "bracketSpacing": false,
+    "arrowParens": "avoid"
   }
 }
