@@ -18,7 +18,7 @@ public class RazorpayWebhookController {
             @RequestHeader("X-Razorpay-Signature")
             String razorpaySignature
     ) {
-        razorpayWebhookService.verifySignature(
+        razorpayWebhookService.processWebhook(
                 rawBody,
                 razorpaySignature
         );

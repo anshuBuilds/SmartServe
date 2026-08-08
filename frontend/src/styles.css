@@ -93,3 +93,107 @@ select{width:100%;border:1px solid #d9d1c7;border-radius:10px;padding:12px;backg
 .notificationFooter{position:relative;z-index:2}
 .notificationBackdrop{z-index:79}
 @media(max-width:800px){.notificationPanel{height:calc(100vh - 92px);max-height:calc(100vh - 92px)}}
+
+/* Role-aware staff walkthrough */
+.profileActions{display:grid!important;gap:6px;justify-items:end}
+.profileActions .icon{width:36px;height:36px;margin-left:0;border-radius:12px;border:1px solid #ffffff20;background:#ffffff0d;color:white;display:grid;place-items:center}
+.profileActions .icon:hover{background:#fff;color:var(--brand);box-shadow:0 10px 24px #00000020}
+.profileActions .icon svg{width:19px;height:19px}
+.walkthroughBlocker{position:fixed;inset:0;z-index:98;background:transparent}
+.walkthroughSpotlight{position:fixed;z-index:99;border:3px solid #f06a37;border-radius:13px;box-shadow:0 0 0 9999px #071b18b8,0 0 0 7px #fff3;pointer-events:none;transition:top .22s ease,left .22s ease,width .22s ease,height .22s ease}
+.walkthroughPanel{position:fixed;right:28px;bottom:28px;z-index:100;width:min(420px,calc(100vw - 32px));padding:24px;background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 24px 80px #071b1860;color:var(--ink)}
+.walkthroughTopline{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.walkthroughTopline>span{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--brand)}
+.walkthroughClose{width:34px;height:34px;border:0;border-radius:10px;background:#f2ece4;color:var(--muted);display:grid;place-items:center}
+.walkthroughClose svg{width:18px;height:18px}
+.walkthroughProgress{height:5px;margin:16px 0 9px;border-radius:999px;background:#ece4da;overflow:hidden}
+.walkthroughProgress span{display:block;height:100%;border-radius:inherit;background:var(--brand);transition:width .2s ease}
+.walkthroughPanel>small{color:var(--muted);font-weight:700}
+.walkthroughPanel h2{margin:9px 0 8px;font-size:28px;line-height:1.15;letter-spacing:0}
+.walkthroughPanel p{margin-bottom:22px;color:var(--muted);line-height:1.55}
+.walkthroughActions{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.walkthroughActions>div{display:flex;gap:9px}
+.walkthroughActions button{min-height:42px;border-radius:10px;font-weight:800}
+.walkthroughActions .textButton{border:0;background:transparent;color:var(--muted);padding:8px}
+.walkthroughActions .secondaryButton,.walkthroughActions .primaryButton{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px}
+.walkthroughActions .secondaryButton{border:1px solid var(--line);background:white;color:var(--dark)}
+.walkthroughActions .primaryButton{border:0;background:var(--brand);color:white;box-shadow:0 10px 22px #d45b3230}
+.walkthroughActions svg{width:17px;height:17px}
+@media(max-width:800px){
+  .tourRunning aside{z-index:97}
+  .walkthroughPanel{right:16px;bottom:16px;padding:20px;width:calc(100vw - 32px)}
+  .walkthroughPanel h2{font-size:24px}
+}
+@media(max-width:430px){
+  .walkthroughActions{align-items:stretch;display:grid}
+  .walkthroughActions>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .walkthroughActions .textButton{justify-self:start}
+}
+.qrCustomerCard{
+  display:grid;
+  justify-items:center;
+  gap:10px;
+  padding:20px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fffdf9;
+  text-align:center;
+  overflow:hidden;
+}
+.qrCustomerCard p{margin:0;color:var(--muted);line-height:1.4}
+.qrCustomerCard svg{display:block;width:min(180px,100%);height:auto}
+.qrCustomerCard h3{margin:0;font-family:'Playfair Display',serif;font-size:28px}
+.qrCustomerCard>small{max-width:100%;color:var(--muted);font-size:10px;overflow-wrap:anywhere}
+.qrPrintBrand{display:flex;align-items:center;gap:10px;font-size:20px}
+.qrPrintBrand span{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:var(--brand);
+  color:white;
+  font-family:'Playfair Display',serif;
+  font-weight:800;
+}
+.qrPlaceholder{width:180px;aspect-ratio:1;display:grid;place-items:center;background:var(--soft);color:var(--muted)}
+.tableQrActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tableQrActions button{width:100%}
+.qrRotationWarning{color:#8a5c45;line-height:1.4}
+
+@media(max-width:520px){
+  .tableQrActions{grid-template-columns:1fr}
+}
+
+@media print{
+  @page{size:A4 portrait;margin:0}
+  body.qr-print-mode{background:white!important}
+  body.qr-print-mode *{visibility:hidden!important}
+  body.qr-print-mode .qrCustomerCard.printing,
+  body.qr-print-mode .qrCustomerCard.printing *{visibility:visible!important}
+  body.qr-print-mode .qrCustomerCard.printing{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    width:100vw;
+    height:100vh;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:20px;
+    padding:24mm;
+    border:0;
+    border-radius:0;
+    background:white;
+    color:#1d211f;
+    box-shadow:none;
+  }
+  body.qr-print-mode .qrCustomerCard.printing .qrPrintBrand{font-size:28px}
+  body.qr-print-mode .qrCustomerCard.printing .qrPrintBrand span{width:58px;height:58px;font-size:25px}
+  body.qr-print-mode .qrCustomerCard.printing p{font-size:18px;color:#444}
+  body.qr-print-mode .qrCustomerCard.printing svg{width:300px;height:300px}
+  body.qr-print-mode .qrCustomerCard.printing h3{font-size:46px}
+  body.qr-print-mode .qrCustomerCard.printing>small{font-size:10px;color:#555}
+}

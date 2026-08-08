@@ -106,8 +106,8 @@ export function UsersPage(){
 
 export function AnalyticsPage(){
   const [params,setParams]=useSearchParams()
-  const defaultTo=dateInput(new Date())
-  const defaultFrom=dateInput(new Date(Date.now()-30*MS_PER_DAY))
+  const [defaultRange]=useState(()=>{const now=new Date();return{to:dateInput(now),from:dateInput(new Date(now.getTime()-30*MS_PER_DAY))}})
+  const {from:defaultFrom,to:defaultTo}=defaultRange
   const from=params.get('from')||defaultFrom
   const to=params.get('to')||defaultTo
   const filters=useMemo(()=>({from:startOfDayIso(from),to:endOfDayIso(to)}),[from,to])

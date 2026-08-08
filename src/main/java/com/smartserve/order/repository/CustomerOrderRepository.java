@@ -24,6 +24,10 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
     List<CustomerOrder> findByBranchIdAndOrderStatus(Long branchId, OrderStatus orderStatus);
     Optional<CustomerOrder> findByTrackingToken(String trackingToken);
 
+    Optional<CustomerOrder> findByRazorpayOrderId(
+            String razorpayOrderId
+    );
+
     @EntityGraph(attributePaths = {"branch", "table", "items", "items.menuItem"})
     @Query("""
             select o from CustomerOrder o

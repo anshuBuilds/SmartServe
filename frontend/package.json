@@ -1,1 +1,43 @@
-{"name":"smartserve-frontend","private":true,"version":"1.0.0","type":"module","scripts":{"dev":"vite","build":"vite build","test":"vitest run","lint":"eslint ."},"dependencies":{"@hookform/resolvers":"latest","@tanstack/react-query":"latest","axios":"latest","date-fns":"latest","lucide-react":"latest","react":"^19.0.0","react-dom":"^19.0.0","react-hook-form":"latest","react-router-dom":"latest","recharts":"latest","sonner":"latest","zod":"latest"},"devDependencies":{"@testing-library/jest-dom":"latest","@testing-library/react":"latest","@testing-library/user-event":"latest","@vitejs/plugin-react":"latest","eslint":"latest","eslint-plugin-react-hooks":"latest","eslint-plugin-react-refresh":"latest","jsdom":"latest","msw":"latest","vite":"latest","vitest":"latest"}}
+{
+  "name": "smartserve-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hookform/resolvers": "latest",
+    "@tanstack/react-query": "latest",
+    "axios": "latest",
+    "date-fns": "latest",
+    "lucide-react": "latest",
+    "qrcode.react": "4.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "latest",
+    "react-router-dom": "7.18.2",
+    "recharts": "latest",
+    "sonner": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "latest",
+    "@testing-library/react": "latest",
+    "@testing-library/user-event": "latest",
+    "@vitejs/plugin-react": "latest",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-refresh": "latest",
+    "globals": "^17.9.0",
+    "jsdom": "latest",
+    "msw": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}

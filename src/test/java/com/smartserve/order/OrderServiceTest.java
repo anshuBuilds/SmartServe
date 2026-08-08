@@ -11,6 +11,7 @@ import com.smartserve.common.exception.BadRequestException;
 import com.smartserve.menu.entity.MenuItem;
 import com.smartserve.common.exception.ConflictException;
 import com.smartserve.menu.repository.MenuItemRepository;
+import com.smartserve.notification.service.NotificationService;
 import com.smartserve.order.dto.CreateOrderItemRequest;
 import com.smartserve.order.dto.CreateOrderRequest;
 import com.smartserve.order.dto.OrderResponse;
@@ -52,6 +53,9 @@ class OrderServiceTest {
     @Mock
     private RestaurantTableRepository tableRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     private OrderService orderService;
 
     @BeforeEach
@@ -61,7 +65,11 @@ class OrderServiceTest {
                 customerOrderRepository,
                 branchRepository,
                 tableRepository,
-                new OrderWorkflowService(customerOrderRepository)
+                new OrderWorkflowService(
+                        customerOrderRepository,
+                        notificationService
+                ),
+                notificationService
         );
     }
 

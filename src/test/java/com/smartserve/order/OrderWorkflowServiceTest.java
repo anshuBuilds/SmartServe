@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.smartserve.common.exception.ConflictException;
 import com.smartserve.common.exception.ForbiddenException;
+import com.smartserve.notification.service.NotificationService;
 import com.smartserve.order.entity.CustomerOrder;
 import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.repository.CustomerOrderRepository;
@@ -23,11 +24,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class OrderWorkflowServiceTest {
     @Mock CustomerOrderRepository repository;
+    @Mock NotificationService notificationService;
     private OrderWorkflowService service;
 
     @BeforeEach
     void setUp() {
-        service = new OrderWorkflowService(repository);
+        service = new OrderWorkflowService(
+                repository,
+                notificationService
+        );
     }
 
     @Test

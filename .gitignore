@@ -4,12 +4,22 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Generated frontend and IDE artifacts ###
+frontend/node_modules/
+frontend/dist/
+.idea.backup/
+*.iml.backup
+output/
+*.orig
+
 ### Local secrets and runtime output ###
 .env
 .env.*
 !.env.example
 *.log
-
+.env.prod.local
+.env.docker.local
+frontend/.env.production.local
 ### STS ###
 .apt_generated
 .classpath
