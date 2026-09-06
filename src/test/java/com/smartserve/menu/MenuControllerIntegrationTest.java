@@ -91,6 +91,17 @@ class MenuControllerIntegrationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void negativeCategoryDisplayOrderIsRejected() throws Exception {
+        mockMvc.perform(post("/api/menu/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(categoryJson("Invalid order", -1)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.displayOrder")
+                        .value("Display order must be zero or greater"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void invalidMenuItemReturnsValidationErrors() throws Exception {
         mockMvc.perform(post("/api/menu/items")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,6 +116,20 @@ class MenuControllerIntegrationTest {
                 .andExpect(jsonPath("$.validationErrors.name").exists())
                 .andExpect(jsonPath("$.validationErrors.price").exists())
                 .andExpect(jsonPath("$.validationErrors.categoryId").exists());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void duplicateItemNameInSameCategoryIsRejectedIgnoringCaseAndSpaces() throws Exception {
+        MenuCategory category = categoryRepository.save(category("Special Cuisine", 1));
+        itemRepository.save(item("Chut Chole", category, true));
+
+        mockMvc.perform(post("/api/menu/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(itemJson("  chut chole  ", category.getId())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("A menu item with this name already exists in the category"));
     }
 
     @Test
@@ -171,5 +196,19 @@ class MenuControllerIntegrationTest {
                   "displayOrder": %d
                 }
                 """.formatted(name, displayOrder);
+    }
+
+    private String itemJson(String name, Long categoryId) {
+        return """
+                {
+                  "name": "%s",
+                  "description": "Test item",
+                  "price": 50.00,
+                  "categoryId": %d,
+                  "preparationTimeMinutes": 10,
+                  "foodType": "VEG",
+                  "spiceLevel": "MEDIUM"
+                }
+                """.formatted(name, categoryId);
     }
 }

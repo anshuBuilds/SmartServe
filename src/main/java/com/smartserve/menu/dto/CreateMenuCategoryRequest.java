@@ -1,6 +1,7 @@
 package com.smartserve.menu.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,5 +16,6 @@ public class CreateMenuCategoryRequest {
     @Size(max = 500, message = "Description must be at most 500 characters")
     private String description;
 
+    @PositiveOrZero(message = "Display order must be zero or greater")
     private Integer displayOrder = 0;
 }
