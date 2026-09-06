@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,6 +40,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConflict(Exception ex, HttpServletRequest request) {
         String message = ex instanceof ConflictException ? ex.getMessage() : "Ticket was changed by another user";
         return build(HttpStatus.CONFLICT, message, request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.CONFLICT, "A record with the same unique values already exists", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

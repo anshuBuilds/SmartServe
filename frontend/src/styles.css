@@ -1854,6 +1854,20 @@ td small {
 .guestFoodCard {
   grid-template-columns: 130px minmax(0, 1fr) 44px;
 }
+.guestFoodCard .round {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  justify-self: center;
+  line-height: 1;
+}
+.guestFoodCard .round:hover {
+  transform: none;
+}
 .guestFoodCard .foodPhoto {
   height: 122px;
 }

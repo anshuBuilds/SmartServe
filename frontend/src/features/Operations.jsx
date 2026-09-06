@@ -404,7 +404,7 @@ export function MenuManagement() {
           >
             <Field name="name" label="Name" required />
             <Field name="description" label="Description" />
-            <Field name="order" label="Display order" type="number" defaultValue="0" />
+            <Field name="order" label="Display order" type="number" min="0" defaultValue="0" />
             <Notice mutation={catCreate} />
             <button className="primary">Create category</button>
           </form>
@@ -453,7 +453,9 @@ export function MenuManagement() {
               <option>HOT</option>
             </Select>
             <Notice mutation={itemCreate} />
-            <button className="primary">Create item</button>
+            <button className="primary" disabled={itemCreate.isPending}>
+              {itemCreate.isPending ? 'Creating item...' : 'Create item'}
+            </button>
           </form>
         </details>
       </div>

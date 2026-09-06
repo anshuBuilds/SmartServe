@@ -1,6 +1,7 @@
 package com.smartserve.menu.service;
 
 import com.smartserve.common.exception.BadRequestException;
+import com.smartserve.common.exception.ConflictException;
 import com.smartserve.common.exception.ResourceNotFoundException;
 import com.smartserve.menu.dto.CreateMenuCategoryRequest;
 import com.smartserve.menu.dto.CreateMenuItemRequest;
@@ -102,6 +103,7 @@ public class MenuService {
 
     public MenuItemResponse createItem(CreateMenuItemRequest request) {
         MenuCategory category = findCategory(request.getCategoryId());
+        rejectDuplicateItemName(category.getId(), request.getName().trim(), null);
 
         MenuItem item = new MenuItem();
         applyItemRequest(item, category, request);
@@ -147,6 +149,12 @@ public class MenuService {
     public MenuItemResponse updateItem(Long itemId, UpdateMenuItemRequest request) {
         MenuItem item = findItem(itemId);
         MenuCategory category = findCategory(request.getCategoryId());
+        String requestedName = request.getName().trim();
+        boolean duplicateIdentityChanged = !item.getCategory().getId().equals(category.getId())
+                || !item.getName().trim().equalsIgnoreCase(requestedName);
+        if (duplicateIdentityChanged) {
+            rejectDuplicateItemName(category.getId(), requestedName, itemId);
+        }
 
         applyItemRequest(item, category, request);
 
@@ -155,6 +163,16 @@ public class MenuService {
         }
 
         return toItemResponse(item);
+    }
+
+    private void rejectDuplicateItemName(Long categoryId, String name, Long currentItemId) {
+        boolean duplicate = currentItemId == null
+                ? menuItemRepository.existsByCategoryIdAndNameIgnoreCase(categoryId, name)
+                : menuItemRepository.existsByCategoryIdAndNameIgnoreCaseAndIdNot(categoryId, name, currentItemId);
+
+        if (duplicate) {
+            throw new ConflictException("A menu item with this name already exists in the category");
+        }
     }
 
     public void deleteItem(Long itemId) {
