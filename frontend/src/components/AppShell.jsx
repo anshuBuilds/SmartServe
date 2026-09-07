@@ -12,7 +12,7 @@ import {
   X,
 } from 'lucide-react'
 import {NavLink, Outlet} from 'react-router-dom'
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import {useAuth} from '../auth/AuthProvider'
 import {NotificationBell} from './NotificationBell'
 import {RoleWalkthrough} from './RoleWalkthrough'
@@ -50,11 +50,29 @@ const links = [
   ],
 ]
 
+const mobilePrimaryPaths = {
+  ADMIN: ['/app/admin', '/app/waiter/orders', '/app/waiter/orders/new', '/app/menu/manage'],
+  MANAGER: ['/app/manager', '/app/waiter/orders', '/app/waiter/orders/new', '/app/kitchen'],
+  WAITER: ['/app/waiter/orders', '/app/waiter/orders/new', '/app/menu'],
+  KITCHEN: ['/app/kitchen', '/app/kitchen/history', '/app/menu'],
+}
+
 export function AppShell() {
   const {user, logout} = useAuth()
   const [open, setOpen] = useState(false)
   const [tourRunning, setTourRunning] = useState(false)
   const initials = user.fullName?.[0] || user.username?.[0] || 'S'
+  const visibleLinks = links.filter(link => link[3].includes(user.role))
+  const mobileLinks = visibleLinks.filter(link => mobilePrimaryPaths[user.role]?.includes(link[1]))
+
+  useEffect(() => {
+    if (!open) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
 
   return (
     <div className={`shell${tourRunning ? ' tourRunning' : ''}`}>
@@ -62,7 +80,13 @@ export function AppShell() {
         <button className="icon" onClick={() => setOpen(true)} aria-label="Open menu">
           <MenuIcon />
         </button>
-        <strong>SmartServe</strong>
+        <span className="mobileMark" aria-hidden="true">
+          SS
+        </span>
+        <div className="mobileHeaderTitle">
+          <strong>SmartServe</strong>
+          <small>{user.branchName || user.role}</small>
+        </div>
         <div className="mobileTools">
           <NotificationBell />
         </div>
@@ -80,14 +104,12 @@ export function AppShell() {
           </button>
         </div>
         <nav>
-          {links
-            .filter(x => x[3].includes(user.role))
-            .map(([label, to, Icon, , tour]) => (
-              <NavLink key={to} to={to} end onClick={() => setOpen(false)} data-tour={tour}>
-                <Icon />
-                {label}
-              </NavLink>
-            ))}
+          {visibleLinks.map(([label, to, Icon, , tour]) => (
+            <NavLink key={to} to={to} end onClick={() => setOpen(false)} data-tour={tour}>
+              <Icon />
+              {label}
+            </NavLink>
+          ))}
         </nav>
         <div className="profile staffCard" data-tour="profile">
           <div className="avatar">{initials}</div>
@@ -131,6 +153,23 @@ export function AppShell() {
         </div>
         <Outlet />
       </main>
+      <nav className="mobileBottomNav" aria-label="Primary navigation">
+        {mobileLinks.map(([label, to, Icon]) => (
+          <NavLink key={to} to={to} end onClick={() => setOpen(false)}>
+            <Icon aria-hidden="true" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+        <button
+          type="button"
+          className={open ? 'active' : ''}
+          onClick={() => setOpen(true)}
+          aria-label="Open all navigation"
+        >
+          <MenuIcon aria-hidden="true" />
+          <span>More</span>
+        </button>
+      </nav>
       {open && <button className="scrim" onClick={() => setOpen(false)} aria-label="Close menu" />}
       <RoleWalkthrough
         user={user}
