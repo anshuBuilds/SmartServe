@@ -337,7 +337,7 @@ export function UsersPage() {
         <Loader />
       ) : (
         <div className="tableWrap">
-          <table>
+          <table className="responsiveTable">
             <thead>
               <tr>
                 <th>Name</th>
@@ -350,13 +350,13 @@ export function UsersPage() {
             <tbody>
               {q.data?.map(u => (
                 <tr key={u.id}>
-                  <td>{u.fullName}</td>
-                  <td>{u.username}</td>
-                  <td>
+                  <td data-label="Team member">{u.fullName}</td>
+                  <td data-label="Username">{u.username}</td>
+                  <td data-label="Role">
                     <span className="badge">{u.role}</span>
                   </td>
-                  <td>{u.branchName || 'All branches'}</td>
-                  <td>
+                  <td data-label="Branch">{u.branchName || 'All branches'}</td>
+                  <td data-label="Status">
                     <span className={`badge ${u.active ? 'green' : 'gray'}`}>
                       {u.active ? 'Active' : 'Inactive'}
                     </span>
@@ -492,7 +492,7 @@ export function AnalyticsPage() {
         </article>
       </div>
       <div className="tableWrap">
-        <table>
+        <table className="responsiveTable">
           <thead>
             <tr>
               <th>Table</th>
@@ -505,15 +505,17 @@ export function AnalyticsPage() {
             {tables.length ? (
               tables.map((t, i) => (
                 <tr key={t.tableId || i}>
-                  <td>{t.tableNumber}</td>
-                  <td>{t.servedOrders || t.orderCount}</td>
-                  <td>{money(t.revenue || t.totalRevenue)}</td>
-                  <td>{money(t.averageOrderValue)}</td>
+                  <td data-label="Table">{t.tableNumber}</td>
+                  <td data-label="Served orders">{t.servedOrders || t.orderCount}</td>
+                  <td data-label="Revenue">{money(t.revenue || t.totalRevenue)}</td>
+                  <td data-label="Average order">{money(t.averageOrderValue)}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4">No table performance data for this range.</td>
+                <td className="tableEmptyCell" colSpan="4">
+                  No table performance data for this range.
+                </td>
               </tr>
             )}
           </tbody>

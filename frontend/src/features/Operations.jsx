@@ -335,7 +335,7 @@ export function UserManagement() {
         </form>
       </details>
       <div className="tableWrap">
-        <table>
+        <table className="responsiveTable">
           <thead>
             <tr>
               <th>Name</th>
@@ -348,19 +348,19 @@ export function UserManagement() {
           <tbody>
             {users.data?.map(u => (
               <tr key={u.id}>
-                <td>
+                <td data-label="Team member">
                   <b>{u.fullName}</b>
                   <br />
                   <small>{u.username}</small>
                 </td>
-                <td>{u.role}</td>
-                <td>{u.branchName || 'All branches'}</td>
-                <td>
+                <td data-label="Role">{u.role}</td>
+                <td data-label="Branch">{u.branchName || 'All branches'}</td>
+                <td data-label="Status">
                   <span className={`badge ${u.active ? 'green' : 'gray'}`}>
                     {u.active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td>
+                <td data-label="Action">
                   <button className="secondary" onClick={() => toggle.mutate(u)}>
                     {u.active ? 'Deactivate' : 'Activate'}
                   </button>
@@ -460,7 +460,7 @@ export function MenuManagement() {
         </details>
       </div>
       <div className="tableWrap">
-        <table>
+        <table className="responsiveTable">
           <thead>
             <tr>
               <th>Item</th>
@@ -473,17 +473,17 @@ export function MenuManagement() {
           <tbody>
             {items.data?.map(i => (
               <tr key={i.id}>
-                <td>
+                <td data-label="Menu item">
                   <b>{i.name}</b>
                   <br />
                   <small>
                     {i.foodType} - {i.spiceLevel}
                   </small>
                 </td>
-                <td>{i.categoryName}</td>
-                <td>{money(i.price)}</td>
-                <td>{i.preparationTimeMinutes} min</td>
-                <td>
+                <td data-label="Category">{i.categoryName}</td>
+                <td data-label="Price">{money(i.price)}</td>
+                <td data-label="Preparation">{i.preparationTimeMinutes} min</td>
+                <td data-label="Availability">
                   <button
                     className={`badge ${i.available ? 'green' : 'gray'}`}
                     onClick={() => availability.mutate(i)}
