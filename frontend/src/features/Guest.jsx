@@ -1,6 +1,6 @@
 import {createContext, useContext, useEffect, useReducer, useState} from 'react'
 import {useMutation, useQuery} from '@tanstack/react-query'
-import {Navigate, useNavigate, useParams} from 'react-router-dom'
+import {Navigate, useLocation, useNavigate, useParams} from 'react-router-dom'
 import {guestApi} from '../api/client'
 import {money, statusLabel} from '../lib/format'
 const CartContext = createContext(null)
@@ -234,7 +234,10 @@ function GuestMenuInner({token}) {
 export function GuestCheckout() {
   const {qrToken} = useParams()
   const nav = useNavigate()
-  const cart = history.state?.usr?.cart || []
+  // Read the cart from the router, not window.history: navigating to the
+  // tracking page replaces window.history.state before this route unmounts,
+  // and an empty cart here would redirect back to the menu.
+  const cart = useLocation().state?.cart || []
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const [checkoutResponse, setCheckoutResponse] = useState(null)
 
