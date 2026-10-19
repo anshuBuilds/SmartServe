@@ -72,6 +72,20 @@ class RazorpayWebhookServiceTest {
     }
 
     @Test
+    void mismatchedWebhookSignatureIsRejectedByRealSdk() {
+        // No mock: the real SDK returns false for a mismatch instead of throwing.
+        String body = "{\"event\":\"payment.captured\"}";
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> service.processWebhook(body, "forged-signature")
+        );
+
+        assertEquals("Invalid Razorpay webhook signature", exception.getMessage());
+        verify(orderRepository, never()).findByRazorpayOrderId(any());
+    }
+
+    @Test
     void unrelatedValidEventIsIgnored() throws Exception {
         String body = "{\"event\":\"refund.processed\"}";
         try (MockedStatic<Utils> utils = validSignature(body)) {

@@ -126,13 +126,20 @@ public class RazorpayWebhookService {
             throw new IllegalStateException("Razorpay webhook secret is not configured");
         }
 
+        // Utils.verifyWebhookSignature returns false on a mismatch; it only
+        // throws when the signature cannot be computed at all.
+        boolean signatureValid;
         try {
-            Utils.verifyWebhookSignature(
+            signatureValid = Utils.verifyWebhookSignature(
                     rawBody,
                     razorPaySignature,
                     webhookSecret
             );
         } catch (RazorpayException exception) {
+            signatureValid = false;
+        }
+
+        if (!signatureValid) {
             throw new BadRequestException(
                     "Invalid Razorpay webhook signature"
             );

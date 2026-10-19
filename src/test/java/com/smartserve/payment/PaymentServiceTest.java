@@ -204,6 +204,29 @@ class PaymentServiceTest {
     }
 
     @Test
+    void mismatchedPaymentSignatureIsRejected() throws Exception {
+        CustomerOrder order = order(new BigDecimal("123.45"), PaymentStatus.PENDING);
+        when(orderRepository.findByTrackingToken("track-123")).thenReturn(Optional.of(order));
+        when(orderRepository.save(order)).thenReturn(order);
+
+        // The SDK reports a mismatch by returning false, not by throwing.
+        try (MockedStatic<Utils> utils = mockStatic(Utils.class)) {
+            utils.when(() -> Utils.verifyPaymentSignature(any(JSONObject.class), any(String.class)))
+                    .thenReturn(false);
+
+            BadRequestException exception = assertThrows(
+                    BadRequestException.class,
+                    () -> service.verifyGuestPayment("track-123", verifyRequest())
+            );
+
+            assertEquals("Payment verification failed", exception.getMessage());
+            assertEquals(PaymentStatus.FAILED, order.getPaymentStatus());
+            assertNull(order.getPaidAt());
+            verify(notificationService, never()).notifyOrderCreated(any());
+        }
+    }
+
+    @Test
     void invalidPaymentSignatureMarksOrderFailedWithoutNotification() throws Exception {
         CustomerOrder order = order(new BigDecimal("123.45"), PaymentStatus.PENDING);
         when(orderRepository.findByTrackingToken("track-123")).thenReturn(Optional.of(order));
