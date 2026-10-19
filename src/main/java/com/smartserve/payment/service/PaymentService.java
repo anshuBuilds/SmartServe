@@ -96,30 +96,37 @@ public class PaymentService {
             throw new BadRequestException("Payment order does not match");
         }
 
+        // Utils.verifyPaymentSignature returns false on a mismatch; it only
+        // throws when the signature cannot be computed at all.
+        boolean signatureValid;
         try {
             JSONObject attributes = new JSONObject();
             attributes.put("razorpay_order_id", request.getRazorpayOrderId());
             attributes.put("razorpay_payment_id", request.getRazorpayPaymentId());
             attributes.put("razorpay_signature", request.getRazorpaySignature());
 
-            Utils.verifyPaymentSignature(attributes, razorpayProperties.keySecret());
-
-            order.setPaymentStatus(PaymentStatus.PAID);
-            order.setRazorpayPaymentId(request.getRazorpayPaymentId());
-            order.setRazorpaySignature(request.getRazorpaySignature());
-            order.setPaymentFailureReason(null);
-            order.setPaidAt(Instant.now());
-
-            CustomerOrder saved = customerOrderRepository.save(order);
-            notificationService.notifyOrderCreated(saved);
-
-            return saved;
+            signatureValid = Utils.verifyPaymentSignature(attributes, razorpayProperties.keySecret());
         } catch (RazorpayException exception) {
+            signatureValid = false;
+        }
+
+        if (!signatureValid) {
             order.setPaymentStatus(PaymentStatus.FAILED);
             order.setPaymentFailureReason("Payment signature verification failed");
             customerOrderRepository.save(order);
             throw new BadRequestException("Payment verification failed");
         }
+
+        order.setPaymentStatus(PaymentStatus.PAID);
+        order.setRazorpayPaymentId(request.getRazorpayPaymentId());
+        order.setRazorpaySignature(request.getRazorpaySignature());
+        order.setPaymentFailureReason(null);
+        order.setPaidAt(Instant.now());
+
+        CustomerOrder saved = customerOrderRepository.save(order);
+        notificationService.notifyOrderCreated(saved);
+
+        return saved;
     }
 
     private int toPaise(BigDecimal amount) {

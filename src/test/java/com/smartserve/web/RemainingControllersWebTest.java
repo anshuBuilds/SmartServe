@@ -27,7 +27,6 @@ import com.smartserve.order.enums.OrderStatus;
 import com.smartserve.order.enums.OrderType;
 import com.smartserve.order.enums.PaymentMethod;
 import com.smartserve.order.enums.PaymentStatus;
-import com.smartserve.order.service.OrderService;
 import com.smartserve.payment.controller.PaymentController;
 import com.smartserve.payment.controller.RazorpayWebhookController;
 import com.smartserve.payment.service.PaymentService;
@@ -56,7 +55,6 @@ class RemainingControllersWebTest {
 
     @Mock GuestService guestService;
     @Mock PaymentService paymentService;
-    @Mock OrderService orderService;
     @Mock RazorpayWebhookService webhookService;
     @Mock NotificationService notificationService;
     @Mock UserRepository userRepository;
@@ -69,7 +67,7 @@ class RemainingControllersWebTest {
         objectMapper = new ObjectMapper();
         mockMvc = MockMvcBuilders.standaloneSetup(
                         new GuestController(guestService),
-                        new PaymentController(paymentService, orderService),
+                        new PaymentController(paymentService, guestService),
                         new RazorpayWebhookController(webhookService),
                         new NotificationController(notificationService, userRepository)
                 )
@@ -130,7 +128,7 @@ class RemainingControllersWebTest {
         CustomerOrder paidOrder = new CustomerOrder();
         when(paymentService.verifyGuestPayment(org.mockito.ArgumentMatchers.eq("track-123"), any()))
                 .thenReturn(paidOrder);
-        when(orderService.mapOrder(paidOrder)).thenReturn(orderResponse());
+        when(guestService.trackedOrder("track-123")).thenReturn(orderResponse());
         String requestBody = """
                 {
                   "razorpayOrderId": "order_1",
