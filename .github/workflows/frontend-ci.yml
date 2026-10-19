@@ -1,0 +1,170 @@
+name: SmartServe Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  test:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    concurrency:
+      group: frontend-ci-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        env:
+          VITE_API_BASE_URL: ${{ vars.FRONTEND_API_BASE_URL || 'https://api.smartserve.anshuyadav.me/api' }}
+        run: npm run build
+
+  deploy:
+    name: Deploy to production
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      id-token: write
+
+    concurrency:
+      group: smartserve-frontend-production
+      cancel-in-progress: false
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Authenticate with AWS using GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: smartserve-frontend-${{ github.run_id }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push static-files image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.FRONTEND_ECR_REPOSITORY || 'smartserve-frontend' }}
+          IMAGE_TAG: ${{ github.sha }}
+          VITE_API_BASE_URL: ${{ vars.FRONTEND_API_BASE_URL || 'https://api.smartserve.anshuyadav.me/api' }}
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL="$VITE_API_BASE_URL" \
+            --tag "$REGISTRY/$REPOSITORY:$IMAGE_TAG" \
+            .
+
+          docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+
+      - name: Deploy build to EC2 through SSM
+        env:
+          INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+
+          PARAMETERS="$(
+            jq -nc \
+              --arg command "/opt/smartserve/deploy-frontend.sh ${IMAGE_TAG}" \
+              '{commands: [$command]}'
+          )"
+
+          COMMAND_ID="$(
+            aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name "AWS-RunShellScript" \
+              --comment "Deploy SmartServe frontend ${IMAGE_TAG}" \
+              --parameters "$PARAMETERS" \
+              --query "Command.CommandId" \
+              --output text
+          )"
+
+          echo "SSM command ID: $COMMAND_ID"
+
+          STATUS=""
+
+          for attempt in {1..36}; do
+            STATUS="$(
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "$INSTANCE_ID" \
+                --query "Status" \
+                --output text \
+                2>/dev/null || true
+            )"
+
+            echo "SSM status ${attempt}/36: ${STATUS:-not available yet}"
+
+            case "$STATUS" in
+              Success|Cancelled|Cancelling|Failed|TimedOut)
+                break
+                ;;
+            esac
+
+            sleep 5
+          done
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' \
+            --output json
+
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "Deployment failed with SSM status: ${STATUS:-unknown}" >&2
+            exit 1
+          fi
+
+      - name: Smoke test live site
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          curl -fsS --retry 3 --retry-delay 5 https://smartserve.anshuyadav.me/ -o index.html
+          ASSET="$(grep -o -m1 'assets/index-[^"]*\.js' index.html)"
+          echo "Live entry bundle: $ASSET"
+          curl -fsS -o /dev/null "https://smartserve.anshuyadav.me/$ASSET"
