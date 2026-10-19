@@ -2,6 +2,7 @@
 import {RequireAuth, RequireRole} from '../auth/Guards'
 import {AppShell} from '../components/AppShell'
 import {Login} from '../features/Login'
+import {Landing} from '../features/Landing'
 import {
   Dashboard,
   MenuPage,
@@ -25,6 +26,7 @@ import {
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/guest/:qrToken" element={<GuestEntry />} />
       <Route path="/guest/:qrToken/menu" element={<GuestMenu />} />
