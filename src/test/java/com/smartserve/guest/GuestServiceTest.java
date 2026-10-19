@@ -48,6 +48,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class GuestServiceTest {
 
+    private static final Long RESTAURANT_ID = 9L;
+
     @Mock RestaurantTableRepository tableRepository;
     @Mock MenuService menuService;
     @Mock OrderService orderService;
@@ -96,13 +98,13 @@ class GuestServiceTest {
     }
 
     @Test
-    void menuReturnsOnlyValuesProvidedByMenuService() {
+    void menuReturnsTheMenuOfTheTablesRestaurant() {
         RestaurantTable table = table(TableStatus.AVAILABLE, true);
         List<MenuCategoryResponse> categories = List.of();
         List<MenuItemResponse> items = List.of();
         when(tableRepository.findByQrToken("valid-qr")).thenReturn(Optional.of(table));
-        when(menuService.getActiveCategories()).thenReturn(categories);
-        when(menuService.getAvailableItems()).thenReturn(items);
+        when(menuService.getActiveCategories(RESTAURANT_ID)).thenReturn(categories);
+        when(menuService.getAvailableItems(RESTAURANT_ID)).thenReturn(items);
 
         var response = service.menu("valid-qr");
 
@@ -121,8 +123,8 @@ class GuestServiceTest {
         );
 
         assertEquals("Ordering is disabled", exception.getMessage());
-        verify(menuService, never()).getActiveCategories();
-        verify(menuService, never()).getAvailableItems();
+        verify(menuService, never()).getActiveCategories(any());
+        verify(menuService, never()).getAvailableItems(any());
     }
 
     @Test
@@ -204,6 +206,7 @@ class GuestServiceTest {
 
     private RestaurantTable table(TableStatus status, boolean branchActive) {
         Restaurant restaurant = new Restaurant();
+        ReflectionTestUtils.setField(restaurant, "id", RESTAURANT_ID);
         restaurant.setName("SmartServe");
         Branch branch = new Branch();
         ReflectionTestUtils.setField(branch, "id", 2L);

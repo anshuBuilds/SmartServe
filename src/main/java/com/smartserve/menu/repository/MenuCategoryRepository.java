@@ -9,14 +9,20 @@ import java.util.Optional;
 
 public interface MenuCategoryRepository extends JpaRepository<MenuCategory, Long> {
 
-    Optional<MenuCategory> findByName(String name);
+    Optional<MenuCategory> findByIdAndRestaurantId(Long id, Long restaurantId);
 
-    boolean existsByName(String name);
+    Optional<MenuCategory> findByRestaurantIdAndNameIgnoreCase(Long restaurantId, String name);
 
-    List<MenuCategory> findByActiveTrueOrderByDisplayOrderAsc();
+    boolean existsByRestaurantIdAndNameIgnoreCase(Long restaurantId, String name);
 
-    boolean existsByDisplayOrder(Integer displayOrder);
+    List<MenuCategory> findByRestaurantIdOrderByDisplayOrderAsc(Long restaurantId);
 
-    @Query("Select coalesce(max(c.displayOrder), 0) from MenuCategory c")
-    Integer findMaxDisplayOrder();
+    List<MenuCategory> findByRestaurantIdAndActiveTrueOrderByDisplayOrderAsc(Long restaurantId);
+
+    boolean existsByRestaurantIdAndDisplayOrderAndIdNot(Long restaurantId, Integer displayOrder, Long id);
+
+    boolean existsByRestaurantIdAndDisplayOrder(Long restaurantId, Integer displayOrder);
+
+    @Query("select coalesce(max(c.displayOrder), 0) from MenuCategory c where c.restaurant.id = :restaurantId")
+    Integer findMaxDisplayOrder(Long restaurantId);
 }

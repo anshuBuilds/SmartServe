@@ -11,6 +11,8 @@ public class MenuCategoryResponse {
 
     private Long id;
 
+    private Long restaurantId;
+
     private String name;
 
     private String description;

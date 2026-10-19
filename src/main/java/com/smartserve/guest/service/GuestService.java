@@ -39,7 +39,11 @@ public class GuestService {
     public GuestMenuResponse menu(String token) {
         RestaurantTable table = findTable(token);
         if (!Boolean.TRUE.equals(table.getBranch().getActive())) throw new BadRequestException("Ordering is disabled");
-        return new GuestMenuResponse(menuService.getActiveCategories(), menuService.getAvailableItems());
+        Long restaurantId = table.getBranch().getRestaurant().getId();
+        return new GuestMenuResponse(
+                menuService.getActiveCategories(restaurantId),
+                menuService.getAvailableItems(restaurantId)
+        );
     }
 
     @Transactional

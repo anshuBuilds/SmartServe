@@ -77,11 +77,11 @@ class AnalyticsServiceIntegrationTest {
     void setUp() {
         orderItemRepository.deleteAll();
         orderRepository.deleteAll();
+        menuItemRepository.deleteAll();
+        categoryRepository.deleteAll();
         tableRepository.deleteAll();
         branchRepository.deleteAll();
         restaurantRepository.deleteAll();
-        menuItemRepository.deleteAll();
-        categoryRepository.deleteAll();
         tables.clear();
 
         Restaurant restaurant = new Restaurant();
@@ -99,6 +99,7 @@ class AnalyticsServiceIntegrationTest {
         branch = branchRepository.save(branch);
 
         MenuCategory category = new MenuCategory();
+        category.setRestaurant(restaurant);
         category.setName("Analytics Menu");
         category.setDisplayOrder(1);
         category = categoryRepository.save(category);

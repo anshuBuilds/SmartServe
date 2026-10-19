@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.smartserve.common.exception.BadRequestException;
+import com.smartserve.common.exception.ResourceNotFoundException;
 import com.smartserve.menu.entity.MenuItem;
 import com.smartserve.common.exception.ConflictException;
 import com.smartserve.menu.repository.MenuItemRepository;
@@ -24,6 +25,7 @@ import com.smartserve.order.service.OrderService;
 import com.smartserve.order.service.OrderWorkflowService;
 import com.smartserve.restaurant.entity.Branch;
 import com.smartserve.restaurant.entity.Restaurant;
+import org.springframework.test.util.ReflectionTestUtils;
 import com.smartserve.restaurant.entity.RestaurantTable;
 import com.smartserve.restaurant.enums.TableStatus;
 import com.smartserve.restaurant.repository.BranchRepository;
@@ -40,6 +42,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
+
+    private static final Long RESTAURANT_ID = 7L;
 
     @Mock
     private MenuItemRepository menuItemRepository;
@@ -78,8 +82,8 @@ class OrderServiceTest {
         MenuItem burger = menuItem("Burger", "125.50", true);
         MenuItem fries = menuItem("Fries", "60.00", true);
         stubAvailableTable();
-        when(menuItemRepository.findById(1L)).thenReturn(Optional.of(burger));
-        when(menuItemRepository.findById(2L)).thenReturn(Optional.of(fries));
+        when(menuItemRepository.findByIdAndCategoryRestaurantId(1L, RESTAURANT_ID)).thenReturn(Optional.of(burger));
+        when(menuItemRepository.findByIdAndCategoryRestaurantId(2L, RESTAURANT_ID)).thenReturn(Optional.of(fries));
         when(customerOrderRepository.save(any(CustomerOrder.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -116,9 +120,24 @@ class OrderServiceTest {
     }
 
     @Test
+    void createOrderRejectsDishFromAnotherRestaurant() {
+        stubAvailableTable();
+        // The dish exists, but not on this branch's restaurant menu, so the scoped lookup is empty.
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> orderService.createOrder(orderRequest(orderItem(1L, 1)))
+        );
+
+        assertEquals("Menu item not found", exception.getMessage());
+        verify(menuItemRepository).findByIdAndCategoryRestaurantId(1L, RESTAURANT_ID);
+        verify(customerOrderRepository, never()).save(any());
+    }
+
+    @Test
     void createOrderRejectsUnavailableMenuItem() {
         stubAvailableTable();
-        when(menuItemRepository.findById(1L))
+        when(menuItemRepository.findByIdAndCategoryRestaurantId(1L, RESTAURANT_ID))
                 .thenReturn(Optional.of(menuItem("Sold-out Burger", "125.50", false)));
 
         BadRequestException exception = assertThrows(
@@ -248,6 +267,7 @@ class OrderServiceTest {
 
     private Branch branch() {
         Restaurant restaurant = new Restaurant();
+        ReflectionTestUtils.setField(restaurant, "id", RESTAURANT_ID);
         restaurant.setName("SmartServe");
         Branch branch = new Branch();
         branch.setName("Main Branch");
