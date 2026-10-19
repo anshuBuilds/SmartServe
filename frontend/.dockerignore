@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+
+# Local env files must never leak into a build; the API URL
+# comes from the VITE_API_BASE_URL build argument instead.
+.env
+.env.*
+!.env.example
+
+Dockerfile
+.dockerignore
+*.log
