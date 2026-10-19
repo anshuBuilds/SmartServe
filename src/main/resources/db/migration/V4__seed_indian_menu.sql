@@ -46,7 +46,7 @@ SELECT v.name, v.description, v.price, c.id, TRUE, v.prep, v.image_url, v.food_t
        NOW(), NOW()
 FROM (VALUES
     ('Soups', 'Tomato Shorba', 'Spiced tomato broth tempered with cumin, ginger and fresh coriander.', 120.00, 'VEG', 'MILD', 10, NULL),
-    ('Soups', 'Sweet Corn Soup', 'Thick, comforting soup of sweet corn and finely chopped vegetables.', 130.00, 'VEG', 'NONE', 10, 'https://smartserve.anshuyadav.me/menu/sweet-corn-soup.jpg'),
+    ('Soups', 'Sweet Corn Soup', 'Thick, comforting soup of sweet corn and finely chopped vegetables.', 130.00, 'VEG', 'NONE', 10, NULL),
     ('Soups', 'Mulligatawny Soup', 'Anglo-Indian lentil and chicken soup with pepper, cumin and a squeeze of lemon.', 160.00, 'NON_VEG', 'MEDIUM', 15, 'https://smartserve.anshuyadav.me/menu/mulligatawny-soup.jpg'),
     ('Soups', 'Rasam', 'Tangy South Indian tamarind and tomato broth with black pepper and curry leaves.', 100.00, 'VEG', 'MEDIUM', 10, 'https://smartserve.anshuyadav.me/menu/rasam.jpg'),
     ('Soups', 'Manchow Soup', 'Indo-Chinese hot and sour vegetable soup topped with crispy fried noodles.', 140.00, 'VEG', 'MEDIUM', 12, 'https://smartserve.anshuyadav.me/menu/manchow-soup.jpg'),
@@ -117,7 +117,7 @@ FROM (VALUES
     ('South Indian', 'Medu Vada', 'Crisp lentil doughnuts with sambar and coconut chutney.', 100.00, 'VEG', 'MILD', 12, 'https://smartserve.anshuyadav.me/menu/medu-vada.jpg'),
     ('South Indian', 'Onion Uttapam', 'Thick rice pancake topped with onions, chillies and coriander.', 140.00, 'VEG', 'MILD', 15, 'https://smartserve.anshuyadav.me/menu/onion-uttapam.jpg'),
     ('South Indian', 'Ven Pongal', 'Creamy rice and moong dal with ghee, pepper, cumin and cashews.', 120.00, 'VEG', 'MILD', 15, 'https://smartserve.anshuyadav.me/menu/ven-pongal.jpg'),
-    ('South Indian', 'Appam with Vegetable Stew', 'Lacy Kerala rice hoppers with a mild coconut milk vegetable stew.', 180.00, 'VEG', 'MILD', 18, 'https://smartserve.anshuyadav.me/menu/appam-with-vegetable-stew.jpg'),
+    ('South Indian', 'Appam with Vegetable Stew', 'Lacy Kerala rice hoppers with a mild coconut milk vegetable stew.', 180.00, 'VEG', 'MILD', 18, NULL),
     ('South Indian', 'Bisi Bele Bath', 'Karnataka-style spiced rice, lentils and vegetables with ghee.', 150.00, 'VEG', 'MEDIUM', 15, 'https://smartserve.anshuyadav.me/menu/bisi-bele-bath.jpg'),
     ('South Indian', 'Lemon Rice', 'Rice tempered with lemon, mustard seeds, peanuts and curry leaves.', 130.00, 'VEG', 'MILD', 10, NULL),
     ('South Indian', 'Curd Rice', 'Cool rice mixed with yogurt, tempered with mustard and curry leaves.', 130.00, 'VEG', 'NONE', 10, NULL),
@@ -128,7 +128,7 @@ FROM (VALUES
     ('Desserts', 'Rice Kheer', 'Creamy rice pudding with cardamom, saffron and nuts.', 110.00, 'VEG', 'NONE', 5, 'https://smartserve.anshuyadav.me/menu/rice-kheer.jpg'),
     ('Desserts', 'Shrikhand', 'Thick strained yogurt sweetened with saffron and cardamom.', 110.00, 'VEG', 'NONE', 5, 'https://smartserve.anshuyadav.me/menu/shrikhand.jpg'),
     ('Desserts', 'Phirni', 'Chilled ground-rice pudding set in clay pots, with rose and pistachio.', 120.00, 'VEG', 'NONE', 5, 'https://smartserve.anshuyadav.me/menu/phirni.jpg'),
-    ('Beverages', 'Sweet Lassi', 'Chilled, frothy sweetened yogurt drink.', 90.00, 'VEG', 'NONE', 5, 'https://smartserve.anshuyadav.me/menu/sweet-lassi.jpg'),
+    ('Beverages', 'Sweet Lassi', 'Chilled, frothy sweetened yogurt drink.', 90.00, 'VEG', 'NONE', 5, NULL),
     ('Beverages', 'Masala Chaas', 'Spiced buttermilk with roasted cumin, ginger and mint.', 60.00, 'VEG', 'MILD', 5, NULL),
     ('Beverages', 'Filter Coffee', 'South Indian decoction coffee with frothy hot milk, served in a dabara.', 60.00, 'VEG', 'NONE', 5, 'https://smartserve.anshuyadav.me/menu/filter-coffee.jpg'),
     ('Beverages', 'Nimbu Pani', 'Fresh lime soda, sweet or salted, with a pinch of black salt.', 60.00, 'VEG', 'NONE', 5, 'https://smartserve.anshuyadav.me/menu/nimbu-pani.jpg'),
