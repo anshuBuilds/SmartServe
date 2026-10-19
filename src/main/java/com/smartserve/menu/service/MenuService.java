@@ -13,7 +13,7 @@ import com.smartserve.menu.entity.MenuCategory;
 import com.smartserve.menu.entity.MenuItem;
 import com.smartserve.menu.repository.MenuCategoryRepository;
 import com.smartserve.menu.repository.MenuItemRepository;
-import java.util.Comparator;
+import com.smartserve.restaurant.repository.RestaurantRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,17 +26,19 @@ public class MenuService {
 
     private final MenuCategoryRepository menuCategoryRepository;
     private final MenuItemRepository menuItemRepository;
+    private final RestaurantRepository restaurantRepository;
 
-    public MenuCategoryResponse createCategory(CreateMenuCategoryRequest request) {
+    public MenuCategoryResponse createCategory(Long restaurantId, CreateMenuCategoryRequest request) {
         String name = request.getCategoryName().trim();
 
-        if (menuCategoryRepository.existsByName(name)) {
+        if (menuCategoryRepository.existsByRestaurantIdAndNameIgnoreCase(restaurantId, name)) {
             throw new BadRequestException("Category already exists");
         }
 
-        Integer displayOrder = resolveDisplayOrder(request.getDisplayOrder());
+        Integer displayOrder = resolveDisplayOrder(restaurantId, request.getDisplayOrder());
 
         MenuCategory category = new MenuCategory();
+        category.setRestaurant(restaurantRepository.getReferenceById(restaurantId));
         category.setName(name);
         category.setDescription(request.getDescription());
         category.setDisplayOrder(displayOrder);
@@ -47,31 +49,30 @@ public class MenuService {
     }
 
     @Transactional(readOnly = true)
-    public List<MenuCategoryResponse> getAllCategories() {
-        return menuCategoryRepository.findAll().stream()
-                .sorted(Comparator.comparing(MenuCategory::getDisplayOrder))
+    public List<MenuCategoryResponse> getAllCategories(Long restaurantId) {
+        return menuCategoryRepository.findByRestaurantIdOrderByDisplayOrderAsc(restaurantId).stream()
                 .map(this::toCategoryResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MenuCategoryResponse> getActiveCategories() {
-        return menuCategoryRepository.findByActiveTrueOrderByDisplayOrderAsc().stream()
+    public List<MenuCategoryResponse> getActiveCategories(Long restaurantId) {
+        return menuCategoryRepository.findByRestaurantIdAndActiveTrueOrderByDisplayOrderAsc(restaurantId).stream()
                 .map(this::toCategoryResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public MenuCategoryResponse getCategory(Long categoryId) {
-        return toCategoryResponse(findCategory(categoryId));
+    public MenuCategoryResponse getCategory(Long restaurantId, Long categoryId) {
+        return toCategoryResponse(findCategory(restaurantId, categoryId));
     }
 
-    public MenuCategoryResponse updateCategory(Long categoryId, UpdateMenuCategoryRequest request) {
-        MenuCategory category = findCategory(categoryId);
+    public MenuCategoryResponse updateCategory(Long restaurantId, Long categoryId, UpdateMenuCategoryRequest request) {
+        MenuCategory category = findCategory(restaurantId, categoryId);
 
         String name = request.getName().trim();
 
-        menuCategoryRepository.findByName(name)
+        menuCategoryRepository.findByRestaurantIdAndNameIgnoreCase(restaurantId, name)
                 .filter(existing -> !existing.getId().equals(categoryId))
                 .ifPresent(existing -> {
                     throw new BadRequestException("Menu category already exists");
@@ -81,7 +82,7 @@ public class MenuService {
         category.setDescription(request.getDescription());
 
         if (request.getDisplayOrder() != null) {
-            validateDisplayOrderIsAvailable(request.getDisplayOrder(), categoryId);
+            validateDisplayOrderIsAvailable(restaurantId, request.getDisplayOrder(), categoryId);
             category.setDisplayOrder(request.getDisplayOrder());
         }
 
@@ -92,17 +93,17 @@ public class MenuService {
         return toCategoryResponse(category);
     }
 
-    public void deleteCategory(Long categoryId) {
-        MenuCategory category = findCategory(categoryId);
+    public void deleteCategory(Long restaurantId, Long categoryId) {
+        MenuCategory category = findCategory(restaurantId, categoryId);
 
-        if (!menuItemRepository.findByCategoryId(categoryId).isEmpty()) {
+        if (menuItemRepository.existsByCategoryId(categoryId)) {
             throw new BadRequestException("Cannot delete a category that has menu items");
         }
         menuCategoryRepository.delete(category);
     }
 
-    public MenuItemResponse createItem(CreateMenuItemRequest request) {
-        MenuCategory category = findCategory(request.getCategoryId());
+    public MenuItemResponse createItem(Long restaurantId, CreateMenuItemRequest request) {
+        MenuCategory category = findCategory(restaurantId, request.getCategoryId());
         rejectDuplicateItemName(category.getId(), request.getName().trim(), null);
 
         MenuItem item = new MenuItem();
@@ -115,22 +116,22 @@ public class MenuService {
     }
 
     @Transactional(readOnly = true)
-    public List<MenuItemResponse> getAllItems() {
-        return menuItemRepository.findAll().stream()
+    public List<MenuItemResponse> getAllItems(Long restaurantId) {
+        return menuItemRepository.findByCategoryRestaurantId(restaurantId).stream()
                 .map(this::toItemResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MenuItemResponse> getAvailableItems() {
-        return menuItemRepository.findByAvailableTrue().stream()
+    public List<MenuItemResponse> getAvailableItems(Long restaurantId) {
+        return menuItemRepository.findByCategoryRestaurantIdAndAvailableTrue(restaurantId).stream()
                 .map(this::toItemResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MenuItemResponse> getItemsByCategory(Long categoryId, Boolean availableOnly) {
-        findCategory(categoryId);
+    public List<MenuItemResponse> getItemsByCategory(Long restaurantId, Long categoryId, Boolean availableOnly) {
+        findCategory(restaurantId, categoryId);
 
         List<MenuItem> items = Boolean.TRUE.equals(availableOnly)
                 ? menuItemRepository.findByCategoryIdAndAvailableTrue(categoryId)
@@ -142,13 +143,13 @@ public class MenuService {
     }
 
     @Transactional(readOnly = true)
-    public MenuItemResponse getItem(Long itemId) {
-        return toItemResponse(findItem(itemId));
+    public MenuItemResponse getItem(Long restaurantId, Long itemId) {
+        return toItemResponse(findItem(restaurantId, itemId));
     }
 
-    public MenuItemResponse updateItem(Long itemId, UpdateMenuItemRequest request) {
-        MenuItem item = findItem(itemId);
-        MenuCategory category = findCategory(request.getCategoryId());
+    public MenuItemResponse updateItem(Long restaurantId, Long itemId, UpdateMenuItemRequest request) {
+        MenuItem item = findItem(restaurantId, itemId);
+        MenuCategory category = findCategory(restaurantId, request.getCategoryId());
         String requestedName = request.getName().trim();
         boolean duplicateIdentityChanged = !item.getCategory().getId().equals(category.getId())
                 || !item.getName().trim().equalsIgnoreCase(requestedName);
@@ -175,8 +176,8 @@ public class MenuService {
         }
     }
 
-    public void deleteItem(Long itemId) {
-        menuItemRepository.delete(findItem(itemId));
+    public void deleteItem(Long restaurantId, Long itemId) {
+        menuItemRepository.delete(findItem(restaurantId, itemId));
     }
 
     private void applyItemRequest(MenuItem item, MenuCategory category, CreateMenuItemRequest request) {
@@ -204,6 +205,7 @@ public class MenuService {
     private MenuCategoryResponse toCategoryResponse(MenuCategory category) {
         return new MenuCategoryResponse(
                 category.getId(),
+                category.getRestaurant().getId(),
                 category.getName(),
                 category.getDescription(),
                 category.getDisplayOrder(),
@@ -231,29 +233,32 @@ public class MenuService {
         );
     }
 
-    private MenuCategory findCategory(Long categoryId) {
-        return menuCategoryRepository.findById(categoryId)
+    // A category or item of another restaurant is reported as not found, not forbidden,
+    // so ids from other restaurants reveal nothing.
+    private MenuCategory findCategory(Long restaurantId, Long categoryId) {
+        return menuCategoryRepository.findByIdAndRestaurantId(categoryId, restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu category not found"));
     }
 
-    private MenuItem findItem(Long itemId) {
-        return menuItemRepository.findById(itemId)
+    private MenuItem findItem(Long restaurantId, Long itemId) {
+        return menuItemRepository.findByIdAndCategoryRestaurantId(itemId, restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
     }
 
-    private Integer resolveDisplayOrder(Integer requestedDisplayOrder) {
+    private Integer resolveDisplayOrder(Long restaurantId, Integer requestedDisplayOrder) {
         if (requestedDisplayOrder == null) {
-            return menuCategoryRepository.findMaxDisplayOrder() + 1;
+            return menuCategoryRepository.findMaxDisplayOrder(restaurantId) + 1;
         }
 
-        validateDisplayOrderIsAvailable(requestedDisplayOrder, null);
+        validateDisplayOrderIsAvailable(restaurantId, requestedDisplayOrder, null);
         return requestedDisplayOrder;
     }
 
-    private void validateDisplayOrderIsAvailable(Integer displayOrder, Long currentCategoryId) {
-        boolean displayOrderTaken = menuCategoryRepository.findAll().stream()
-                .anyMatch(category -> category.getDisplayOrder().equals(displayOrder)
-                        && !category.getId().equals(currentCategoryId));
+    private void validateDisplayOrderIsAvailable(Long restaurantId, Integer displayOrder, Long currentCategoryId) {
+        boolean displayOrderTaken = currentCategoryId == null
+                ? menuCategoryRepository.existsByRestaurantIdAndDisplayOrder(restaurantId, displayOrder)
+                : menuCategoryRepository.existsByRestaurantIdAndDisplayOrderAndIdNot(
+                        restaurantId, displayOrder, currentCategoryId);
 
         if (displayOrderTaken) {
             throw new BadRequestException("Display order already exists");

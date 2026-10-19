@@ -7,6 +7,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.smartserve.TestcontainersConfiguration;
+import com.smartserve.menu.repository.MenuCategoryRepository;
+import com.smartserve.menu.repository.MenuItemRepository;
+import com.smartserve.order.repository.CustomerOrderRepository;
+import com.smartserve.order.repository.OrderItemRepository;
 import com.smartserve.restaurant.entity.Branch;
 import com.smartserve.restaurant.entity.Restaurant;
 import com.smartserve.restaurant.entity.RestaurantTable;
@@ -43,8 +47,25 @@ class RestaurantControllerIntegrationTest {
     @Autowired
     private RestaurantTableRepository tableRepository;
 
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private CustomerOrderRepository orderRepository;
+
+    @Autowired
+    private MenuItemRepository menuItemRepository;
+
+    @Autowired
+    private MenuCategoryRepository categoryRepository;
+
     @BeforeEach
     void cleanDatabase() {
+        // Menus and orders reference restaurants and branches, so they go first.
+        orderItemRepository.deleteAll();
+        orderRepository.deleteAll();
+        menuItemRepository.deleteAll();
+        categoryRepository.deleteAll();
         tableRepository.deleteAll();
         branchRepository.deleteAll();
         restaurantRepository.deleteAll();

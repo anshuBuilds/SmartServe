@@ -5,6 +5,7 @@ import {api} from '../api/client'
 import {analyticsKeys, kitchenKeys, menuKeys, orderKeys} from '../api/queryKeys'
 import {money} from '../lib/format'
 import {useAuth} from '../auth/AuthProvider'
+import {RestaurantPicker, useMenuRestaurant} from './menuScope'
 import {
   BarChart,
   Bar,
@@ -83,10 +84,16 @@ export function Dashboard({manager = false}) {
 export function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [search, setSearch] = useState('')
-  const items = useQuery({queryKey: menuKeys.items(), queryFn: () => api.get('/menu/items')})
+  const scope = useMenuRestaurant()
+  const items = useQuery({
+    queryKey: menuKeys.items({restaurantId: scope.restaurantId}),
+    queryFn: () => api.get(scope.withRestaurant('/menu/items')),
+    enabled: scope.ready,
+  })
   const cats = useQuery({
-    queryKey: menuKeys.categories(),
-    queryFn: () => api.get('/menu/categories?activeOnly=true'),
+    queryKey: menuKeys.categories({restaurantId: scope.restaurantId, activeOnly: true}),
+    queryFn: () => api.get(scope.withRestaurant('/menu/categories?activeOnly=true')),
+    enabled: scope.ready,
   })
   const visible = (items.data || []).filter(
     i =>
@@ -98,6 +105,7 @@ export function MenuPage() {
   )
   return (
     <Page title="Menu" subtitle="Browse dishes by category, with availability and prep details.">
+      <RestaurantPicker scope={scope} />
       {items.isLoading ? (
         <Loader />
       ) : items.error ? (

@@ -99,7 +99,9 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (CreateOrderItemRequest itemRequest : request.getItems()) {
-            MenuItem menuItem = menuItemRepository.findById(itemRequest.getMenuItemId())
+            // Only dishes from this branch's restaurant can be ordered here.
+            MenuItem menuItem = menuItemRepository
+                    .findByIdAndCategoryRestaurantId(itemRequest.getMenuItemId(), branch.getRestaurant().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
 
             if (!menuItem.getAvailable()) {

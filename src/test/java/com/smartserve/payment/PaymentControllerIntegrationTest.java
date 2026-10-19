@@ -84,11 +84,11 @@ class PaymentControllerIntegrationTest {
     void setUp() {
         orderItemRepository.deleteAll();
         orderRepository.deleteAll();
+        menuItemRepository.deleteAll();
+        categoryRepository.deleteAll();
         tableRepository.deleteAll();
         branchRepository.deleteAll();
         restaurantRepository.deleteAll();
-        menuItemRepository.deleteAll();
-        categoryRepository.deleteAll();
     }
 
     @Test
@@ -144,6 +144,7 @@ class PaymentControllerIntegrationTest {
         table = tableRepository.save(table);
 
         MenuCategory category = new MenuCategory();
+        category.setRestaurant(restaurant);
         category.setName("Starters");
         category.setDisplayOrder(1);
         category = categoryRepository.save(category);

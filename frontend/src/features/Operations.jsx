@@ -5,6 +5,7 @@ import {QRCodeSVG} from 'qrcode.react'
 import {api} from '../api/client'
 import {money} from '../lib/format'
 import {useAuth} from '../auth/AuthProvider'
+import {RestaurantPicker, useMenuRestaurant} from './menuScope'
 
 const useApiMutation = (fn, keys = []) => {
   const qc = useQueryClient()
@@ -375,18 +376,33 @@ export function UserManagement() {
 }
 
 export function MenuManagement() {
-  const cats = useQuery({queryKey: ['categories'], queryFn: () => api.get('/menu/categories')}),
-    items = useQuery({queryKey: ['menu'], queryFn: () => api.get('/menu/items')}),
-    catCreate = useApiMutation(d => api.post('/menu/categories', d), ['categories']),
-    itemCreate = useApiMutation(d => api.post('/menu/items', d), ['menu']),
+  const scope = useMenuRestaurant()
+  const {withRestaurant, restaurantId, ready} = scope
+  const cats = useQuery({
+      queryKey: ['categories', restaurantId],
+      queryFn: () => api.get(withRestaurant('/menu/categories')),
+      enabled: ready,
+    }),
+    items = useQuery({
+      queryKey: ['menu', restaurantId],
+      queryFn: () => api.get(withRestaurant('/menu/items')),
+      enabled: ready,
+    }),
+    catCreate = useApiMutation(
+      d => api.post(withRestaurant('/menu/categories'), d),
+      ['categories'],
+    ),
+    itemCreate = useApiMutation(d => api.post(withRestaurant('/menu/items'), d), ['menu']),
     availability = useApiMutation(
-      item => api.put(`/menu/items/${item.id}`, {...item, available: !item.available}),
+      item =>
+        api.put(withRestaurant(`/menu/items/${item.id}`), {...item, available: !item.available}),
       ['menu'],
     )
   return (
     <Page
       title="Menu management"
       subtitle="Categories, pricing, availability and preparation details."
+      actions={<RestaurantPicker scope={scope} />}
     >
       <div className="split">
         <details className="card disclosure">
@@ -520,13 +536,18 @@ export function StaffOrderCreate() {
     queryFn: () => api.get(`/restaurants/${restaurant}/branches`),
     enabled: !user.branchId && Boolean(restaurant),
   })
+  // Staff get their own restaurant's menu; admins see the menu of the restaurant they picked.
+  const menuQuery = !user.branchId && restaurant ? `&restaurantId=${restaurant}` : ''
+  const menuReady = Boolean(user.branchId) || Boolean(restaurant)
   const cats = useQuery({
-    queryKey: ['categories', 'active'],
-    queryFn: () => api.get('/menu/categories?activeOnly=true'),
+    queryKey: ['categories', 'active', restaurant],
+    queryFn: () => api.get(`/menu/categories?activeOnly=true${menuQuery}`),
+    enabled: menuReady,
   })
   const menu = useQuery({
-    queryKey: ['menu', 'available'],
-    queryFn: () => api.get('/menu/items?availableOnly=true'),
+    queryKey: ['menu', 'available', restaurant],
+    queryFn: () => api.get(`/menu/items?availableOnly=true${menuQuery}`),
+    enabled: menuReady,
   })
   const tables = useQuery({
     queryKey: ['tables', branchId],
